@@ -25,11 +25,15 @@ namespace ThreeDimensionShooter
         [Header("Wave")]
         [SerializeField] private int _currentWave = 0;
 
+        [Header("Lives")]
+        [SerializeField] private int _startingLives = 3;
+
         public GameState State { get; private set; } = GameState.Title;
         public int Score => _score;
         public int ComboCount => _comboCount;
         public int ComboMultiplier => 1 << Mathf.Min(_comboCount, 4); // x1, x2, x4, x8, x16
         public int CurrentWave => _currentWave;
+        public int Lives { get; private set; }
 
         private float _comboTimer;
 
@@ -67,11 +71,19 @@ namespace ThreeDimensionShooter
 
         public void StartGame()
         {
+            Time.timeScale = 1f;
             _score = 0;
             _comboCount = 0;
             _currentWave = 0;
+            Lives = Mathf.Max(1, _startingLives);
             State = GameState.InGame;
             AdvanceWave();
+        }
+
+        public bool LoseLife()
+        {
+            Lives = Mathf.Max(0, Lives - 1);
+            return Lives > 0;
         }
 
         public void AddScore(int baseScore)
@@ -88,6 +100,7 @@ namespace ThreeDimensionShooter
 
         public void GameOver()
         {
+            Time.timeScale = 1f;
             State = GameState.GameOver;
             AudioManager.Instance?.StopBGM();
             // ゲームオーバーシーンへ遷移

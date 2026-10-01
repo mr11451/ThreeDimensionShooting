@@ -31,10 +31,12 @@ namespace ThreeDimensionShooter
         private float _throttleInput; // -1..1 (前後)
         private float _pitch;
         private float _yaw;
+        private PlayerShield _playerShield;
 
         private void Awake()
         {
             _rb = GetComponent<Rigidbody>();
+            _playerShield = GetComponent<PlayerShield>();
             _rb.useGravity = false;
             _rb.interpolation = RigidbodyInterpolation.Interpolate;
             _rb.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
@@ -42,14 +44,46 @@ namespace ThreeDimensionShooter
 
         private void Update()
         {
+            if (_playerShield != null && _playerShield.IsDowned)
+            {
+                _moveInput = Vector2.zero;
+                _lookInput = Vector2.zero;
+                _throttleInput = 0f;
+                return;
+            }
+
             ReadInput();
             ApplyLook();
         }
 
         private void FixedUpdate()
         {
+            if (_playerShield != null && _playerShield.IsDowned)
+            {
+                _rb.linearVelocity = Vector3.zero;
+                _rb.angularVelocity = Vector3.zero;
+                return;
+            }
+
             ApplyThrust();
             ClampSpeed();
+        }
+
+        private void OnCollisionEnter(Collision collision)
+        {
+            var backdrop = collision.collider.GetComponentInParent<NavigationBackdrop>();
+            if (backdrop != null)
+            {
+                backdrop.HandleStarCollision(collision.collider);
+            }
+        }
+
+        private void OnTriggerEnter(Collider other)
+        {
+            if (other.GetComponentInParent<EnemyBase>() != null)
+            {
+                GetComponent<PlayerShield>()?.TakeDamage(100f);
+            }
         }
 
         private void ReadInput()

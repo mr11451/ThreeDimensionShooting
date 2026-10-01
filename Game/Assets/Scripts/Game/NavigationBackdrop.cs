@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -13,11 +14,48 @@ namespace ThreeDimensionShooter
         [SerializeField] private int _seed = 31415;
         [SerializeField] private float _starMinDistance = 400f;
         [SerializeField] private float _starMaxDistance = 1200f;
+        [SerializeField] private float _starCollisionDamage = 10f;
         [SerializeField] private Material _starMaterial;
+
+        private Transform _player;
+        private PlayerShield _playerShield;
+        private Transform[] _stars;
+        private readonly HashSet<Transform> _starTransforms = new HashSet<Transform>();
+        private System.Random _random;
 
         private void Awake()
         {
+            var player = FindFirstObjectByType<PlayerShipController>();
+            if (player != null)
+            {
+                _player = player.transform;
+                _playerShield = player.GetComponent<PlayerShield>();
+            }
+            _random = new System.Random(_seed);
             BuildBackdrop();
+        }
+
+        private void Update()
+        {
+            if (_player == null || _stars == null) return;
+
+            float maxDistanceSqr = _starMaxDistance * _starMaxDistance;
+            foreach (var star in _stars)
+            {
+                float distanceSqr = (star.position - _player.position).sqrMagnitude;
+                if (distanceSqr > maxDistanceSqr)
+                {
+                    PlaceStar(star);
+                }
+            }
+        }
+
+        public void HandleStarCollision(Collider starCollider)
+        {
+            if (starCollider == null || !_starTransforms.Contains(starCollider.transform)) return;
+
+            _playerShield?.TakeDamage(_starCollisionDamage);
+            PlaceStar(starCollider.transform);
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
@@ -45,16 +83,24 @@ namespace ThreeDimensionShooter
             var starMaterial = _starMaterial != null
                 ? _starMaterial
                 : CreateMaterial("Unlit/Color", new Color(0.55f, 0.85f, 1f));
-            var random = new System.Random(_seed);
+            _stars = new Transform[StarCount];
 
             for (int i = 0; i < StarCount; i++)
             {
-                var direction = RandomDirection(random);
-                float distance = Mathf.Lerp(_starMinDistance, _starMaxDistance, (float)random.NextDouble());
-                float size = Mathf.Lerp(0.4f, 1.2f, (float)random.NextDouble());
-                var star = CreatePrimitive("Star", PrimitiveType.Sphere, parent, direction * distance, size, starMaterial);
+                float size = Mathf.Lerp(0.4f, 1.2f, (float)_random.NextDouble());
+                var star = CreatePrimitive("Star", PrimitiveType.Sphere, parent, Vector3.zero, size, starMaterial);
                 star.transform.localScale = Vector3.one * size;
+                _stars[i] = star.transform;
+                _starTransforms.Add(star.transform);
+                PlaceStar(star.transform);
             }
+        }
+
+        private void PlaceStar(Transform star)
+        {
+            var direction = RandomDirection(_random);
+            float distance = Mathf.Lerp(_starMinDistance, _starMaxDistance, (float)_random.NextDouble());
+            star.position = (_player != null ? _player.position : transform.position) + direction * distance;
         }
 
         private static GameObject CreatePrimitive(string objectName, PrimitiveType type, Transform parent, Vector3 position, float size, Material material)
@@ -66,8 +112,6 @@ namespace ThreeDimensionShooter
             go.transform.localScale = Vector3.one * size;
             go.GetComponent<Renderer>().sharedMaterial = material;
 
-            var collider = go.GetComponent<Collider>();
-            if (collider != null) Destroy(collider);
             return go;
         }
 

@@ -95,8 +95,8 @@ namespace ThreeDimensionShooter
             DrawConsoleRect(panel, new Color(0.012f, 0.035f, 0.045f, 0.22f));
             DrawConsoleRect(new Rect(panel.x, panel.y, panel.width, 2f), new Color(0.1f, 0.9f, 1f, 0.9f));
 
-            float columnWidth = panel.width / 5f;
-            for (int i = 1; i < 5; i++)
+            float columnWidth = panel.width / 6f;
+            for (int i = 1; i < 6; i++)
             {
                 float dividerX = panel.x + columnWidth * i;
                 DrawConsoleRect(new Rect(dividerX, panel.y + panel.height * 0.2f, 1f, panel.height * 0.6f),
@@ -112,11 +112,12 @@ namespace ThreeDimensionShooter
             DrawConsoleCell(panel, 2, "COMBO", $"x{gm.ComboMultiplier}", new Color(1f, 0.8f, 0.2f));
             DrawConsoleCell(panel, 3, "MISSILE", missileValue, new Color(0.3f, 0.9f, 1f));
             DrawConsoleCell(panel, 4, "WAVE", gm.CurrentWave.ToString(), Color.white);
+            DrawConsoleCell(panel, 5, "LIVES", gm.Lives.ToString(), new Color(1f, 0.55f, 0.35f));
         }
 
         private void DrawConsoleCell(Rect panel, int index, string label, string value, Color valueColor)
         {
-            float columnWidth = panel.width / 5f;
+            float columnWidth = panel.width / 6f;
             float x = panel.x + columnWidth * index;
             var labelRect = new Rect(x, panel.y + panel.height * 0.15f, columnWidth, panel.height * 0.3f);
             var valueRect = new Rect(x, panel.y + panel.height * 0.43f, columnWidth, panel.height * 0.45f);
