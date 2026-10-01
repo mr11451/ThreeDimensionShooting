@@ -62,6 +62,28 @@ namespace ThreeDimensionShooter.EditorTools
             Debug.Log("[SceneSetup] Navigation backdrop added to Game scene.");
         }
 
+        [MenuItem("Tools/ThreeDimension/Setup Cockpit Frame")]
+        public static void SetupCockpitFrame()
+        {
+            var scene = EditorSceneManager.OpenScene($"{SceneDir}/Game.unity", OpenSceneMode.Single);
+            var player = Object.FindFirstObjectByType<PlayerShipController>();
+            if (player == null)
+            {
+                Debug.LogError("[SceneSetup] Player not found in Game scene.");
+                return;
+            }
+
+            if (player.GetComponent<ThreeDimensionShooter.CockpitFrame>() == null)
+            {
+                player.gameObject.AddComponent<ThreeDimensionShooter.CockpitFrame>();
+            }
+
+            EditorSceneManager.MarkSceneDirty(scene);
+            EditorSceneManager.SaveScene(scene);
+            AssetDatabase.SaveAssets();
+            Debug.Log("[SceneSetup] Cockpit frame added to Player.");
+        }
+
         private static void EnsureFolder(string parent, string name)
         {
             if (!AssetDatabase.IsValidFolder($"{parent}/{name}"))
@@ -162,6 +184,7 @@ namespace ThreeDimensionShooter.EditorTools
             player.AddComponent<PlayerShipController>();
             player.AddComponent<PlayerShield>();
             player.AddComponent<PlayerWeapons>();
+            player.AddComponent<ThreeDimensionShooter.CockpitFrame>();
             var col = player.AddComponent<CapsuleCollider>();
             col.radius = 0.5f;
             col.height = 2f;

@@ -61,7 +61,13 @@ namespace ThreeDimensionShooter
             if (_overlayTexture == null || Event.current.type != EventType.Repaint) return;
 
             const float size = 200f;
-            var rect = new Rect(Screen.width - size - 30f, Screen.height - size - 30f, size, size);
+            const float windowFrameBottom = 0.88f;
+            const float frameGap = 18f;
+            var rect = new Rect(
+                (Screen.width - size) * 0.5f,
+                Screen.height * windowFrameBottom - size - frameGap,
+                size,
+                size);
             GUI.DrawTexture(rect, _overlayTexture, ScaleMode.StretchToFill, true);
 
             const float markerSize = 10f;

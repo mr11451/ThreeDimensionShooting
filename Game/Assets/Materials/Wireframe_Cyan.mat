@@ -25,7 +25,7 @@ Material:
     m_TexEnvs: []
     m_Ints: []
     m_Floats:
-    - _WireWidth: 1.5
+    - _WireWidth: 0.08
     m_Colors:
     - _BackColor: {r: 0.020000001, g: 0.089999996, b: 0.1, a: 0.3}
     - _WireColor: {r: 0.2, g: 0.9, b: 1, a: 1}

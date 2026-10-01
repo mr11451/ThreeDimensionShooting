@@ -915,7 +915,6 @@ MonoBehaviour:
   _starMinDistance: 400
   _starMaxDistance: 1200
   _starMaterial: {fileID: 2100000, guid: b11f6e26ea1aa5f439e3f9c45ea2032d, type: 2}
-  _landmarkMaterial: {fileID: 2100000, guid: b11f6e26ea1aa5f439e3f9c45ea2032d, type: 2}
 --- !u!4 &1478089860
 Transform:
   m_ObjectHideFlags: 0
@@ -1453,6 +1452,7 @@ GameObject:
   - component: {fileID: 1841879947}
   - component: {fileID: 1841879946}
   - component: {fileID: 1841879945}
+  - component: {fileID: 1841879951}
   m_Layer: 0
   m_Name: Player
   m_TagString: Untagged
@@ -1503,6 +1503,8 @@ MonoBehaviour:
   _missileMaxStock: 8
   _lockOnRadius: 120
   _lockOnAngleDeg: 15
+  _maxLockOnAngleDeg: 45
+  _lockOnExpandSpeed: 20
   _maxLockTargets: 4
   _enemyLayer:
     serializedVersion: 2
@@ -1538,7 +1540,6 @@ MonoBehaviour:
   _forwardThrust: 60
   _maxSpeed: 60
   _lookSensitivity: 2.5
-  _pitchLimitDeg: 80
   _rollLerp: 6
   _bankOnStrafeDeg: 25
   _linearDragWhenNoInput: 3
@@ -1586,6 +1587,22 @@ Transform:
   - {fileID: 1345529128}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1841879951
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1841879944}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f2d3d0e191c1e894cb595c2b1806384e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _visible: 1
+  _distance: 2.2
+  _pillarWidth: 0.08
+  _pillarHeight: 1.4
 --- !u!1 &1853700861
 GameObject:
   m_ObjectHideFlags: 0

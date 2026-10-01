@@ -10,13 +10,15 @@ namespace ThreeDimensionShooter
     {
         [SerializeField] private float _maxShield = 100f;
         [SerializeField] private float _regenDelay = 3f;
-        [SerializeField] private float _regenPerSecond = 20f;
+        [SerializeField] private float _regenAmount = 1f;
+        [SerializeField] private float _regenInterval = 0.05f;
 
         public float Current { get; private set; }
         public float Max => _maxShield;
         public bool IsDestroyed => Current <= 0f;
 
         private float _lastDamageTime = -999f;
+        private float _regenTimer;
 
         private void Awake()
         {
@@ -29,7 +31,16 @@ namespace ThreeDimensionShooter
 
             if (Time.time - _lastDamageTime >= _regenDelay && Current < _maxShield)
             {
-                Current = Mathf.Min(_maxShield, Current + _regenPerSecond * Time.deltaTime);
+                _regenTimer += Time.deltaTime;
+                if (_regenTimer >= _regenInterval)
+                {
+                    _regenTimer -= _regenInterval;
+                    Current = Mathf.Min(_maxShield, Current + _regenAmount);
+                }
+            }
+            else
+            {
+                _regenTimer = 0f;
             }
         }
 
@@ -39,6 +50,7 @@ namespace ThreeDimensionShooter
 
             Current -= amount;
             _lastDamageTime = Time.time;
+            _regenTimer = 0f;
 
             GameManager.Instance?.ResetCombo();
             AudioManager.Instance?.PlayHit();
