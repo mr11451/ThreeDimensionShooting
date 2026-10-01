@@ -14,7 +14,7 @@ namespace ThreeDimensionShooter
         [SerializeField] private int _seed = 31415;
         [SerializeField] private float _starMinDistance = 400f;
         [SerializeField] private float _starMaxDistance = 1200f;
-        [SerializeField] private float _starCollisionDamage = 10f;
+        [SerializeField] private float _starCollisionDamage = 100f;
         [SerializeField] private Material _starMaterial;
 
         private Transform _player;

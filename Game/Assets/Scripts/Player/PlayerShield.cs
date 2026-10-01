@@ -13,7 +13,7 @@ namespace ThreeDimensionShooter
         [SerializeField] private float _maxShield = 100f;
         [SerializeField] private float _regenDelay = 3f;
         [SerializeField] private float _regenAmount = 1f;
-        [SerializeField] private float _regenInterval = 0.05f;
+        [SerializeField] private float _regenInterval = 1f;
         [SerializeField] private float _downedEffectSeconds = 3f;
         [SerializeField] private float _respawnInvulnerabilitySeconds = 2f;
 

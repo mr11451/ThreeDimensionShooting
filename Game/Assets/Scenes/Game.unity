@@ -1523,7 +1523,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _maxShield: 100
   _regenDelay: 3
-  _regenPerSecond: 20
+  _regenAmount: 1
+  _regenInterval: 1
+  _downedEffectSeconds: 3
+  _respawnInvulnerabilitySeconds: 2
 --- !u!114 &1841879948
 MonoBehaviour:
   m_ObjectHideFlags: 0
