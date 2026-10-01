@@ -19,7 +19,8 @@ namespace ThreeDimensionShooter
         [SerializeField] private PlayerShield _playerShield;
         [SerializeField] private PlayerWeapons _playerWeapons;
 
-        private GUIStyle _hudStyle;
+        private GUIStyle _consoleLabelStyle;
+        private GUIStyle _consoleValueStyle;
 
         private void Start()
         {
@@ -70,40 +71,66 @@ namespace ThreeDimensionShooter
             var gm = GameManager.Instance;
             if (gm == null) return;
 
-            _hudStyle ??= new GUIStyle(GUI.skin.label)
+            _consoleLabelStyle ??= new GUIStyle(GUI.skin.label)
             {
-                fontSize = 22,
-                normal = { textColor = Color.white },
+                alignment = TextAnchor.MiddleCenter,
+                fontStyle = FontStyle.Bold,
+                wordWrap = false,
+            };
+            _consoleValueStyle ??= new GUIStyle(GUI.skin.label)
+            {
+                alignment = TextAnchor.MiddleCenter,
+                fontStyle = FontStyle.Bold,
+                wordWrap = false,
             };
 
-            if (_shieldText == null && _playerShield != null)
+            float panelTop = Screen.height * 0.885f;
+            var panel = new Rect(Screen.width * 0.06f, panelTop, Screen.width * 0.88f, Screen.height - panelTop);
+            float labelSize = Mathf.Clamp(Screen.height * 0.012f, 10f, 16f);
+            float valueSize = Mathf.Clamp(Screen.height * 0.019f, 14f, 24f);
+            _consoleLabelStyle.fontSize = Mathf.RoundToInt(labelSize);
+            _consoleLabelStyle.normal.textColor = new Color(0.48f, 0.82f, 0.86f);
+            _consoleValueStyle.fontSize = Mathf.RoundToInt(valueSize);
+
+            DrawConsoleRect(panel, new Color(0.012f, 0.035f, 0.045f, 0.22f));
+            DrawConsoleRect(new Rect(panel.x, panel.y, panel.width, 2f), new Color(0.1f, 0.9f, 1f, 0.9f));
+
+            float columnWidth = panel.width / 5f;
+            for (int i = 1; i < 5; i++)
             {
-                GUI.Label(new Rect(30f, 25f, 300f, 32f),
-                    $"SHIELD {(int)_playerShield.Current}/{(int)_playerShield.Max}", _hudStyle);
+                float dividerX = panel.x + columnWidth * i;
+                DrawConsoleRect(new Rect(dividerX, panel.y + panel.height * 0.2f, 1f, panel.height * 0.6f),
+                    new Color(0.1f, 0.65f, 0.7f, 0.4f));
             }
 
-            if (_scoreText == null)
-            {
-                _hudStyle.alignment = TextAnchor.UpperRight;
-                GUI.Label(new Rect(Screen.width - 330f, 25f, 300f, 32f),
-                    $"SCORE {gm.Score:N0}", _hudStyle);
-            }
+            string shieldValue = _playerShield != null
+                ? $"{(int)_playerShield.Current} / {(int)_playerShield.Max}"
+                : "--- / ---";
+            string missileValue = _playerWeapons != null ? _playerWeapons.MissileStock.ToString() : "--";
+            DrawConsoleCell(panel, 0, "SHIELD", shieldValue, new Color(0.3f, 1f, 0.6f));
+            DrawConsoleCell(panel, 1, "SCORE", gm.Score.ToString("N0"), Color.white);
+            DrawConsoleCell(panel, 2, "COMBO", $"x{gm.ComboMultiplier}", new Color(1f, 0.8f, 0.2f));
+            DrawConsoleCell(panel, 3, "MISSILE", missileValue, new Color(0.3f, 0.9f, 1f));
+            DrawConsoleCell(panel, 4, "WAVE", gm.CurrentWave.ToString(), Color.white);
+        }
 
-            if (_missileText == null && _playerWeapons != null)
-            {
-                _hudStyle.alignment = TextAnchor.UpperLeft;
-                GUI.Label(new Rect(30f, Screen.height - 55f, 300f, 32f),
-                    $"MISSILE {_playerWeapons.MissileStock}", _hudStyle);
-            }
+        private void DrawConsoleCell(Rect panel, int index, string label, string value, Color valueColor)
+        {
+            float columnWidth = panel.width / 5f;
+            float x = panel.x + columnWidth * index;
+            var labelRect = new Rect(x, panel.y + panel.height * 0.15f, columnWidth, panel.height * 0.3f);
+            var valueRect = new Rect(x, panel.y + panel.height * 0.43f, columnWidth, panel.height * 0.45f);
+            _consoleValueStyle.normal.textColor = valueColor;
+            GUI.Label(labelRect, label, _consoleLabelStyle);
+            GUI.Label(valueRect, value, _consoleValueStyle);
+        }
 
-            if (_waveText == null)
-            {
-                _hudStyle.alignment = TextAnchor.UpperCenter;
-                GUI.Label(new Rect(Screen.width * 0.5f - 150f, 25f, 300f, 32f),
-                    $"WAVE {gm.CurrentWave}", _hudStyle);
-            }
-
-            _hudStyle.alignment = TextAnchor.UpperRight;
+        private static void DrawConsoleRect(Rect rect, Color color)
+        {
+            var previousColor = GUI.color;
+            GUI.color = color;
+            GUI.DrawTexture(rect, Texture2D.whiteTexture);
+            GUI.color = previousColor;
         }
     }
 }
