@@ -67,6 +67,39 @@ namespace ThreeDimensionShooter
             return CreateClip("Explosion", data);
         }
 
+        /// <summary>自機撃墜: 低い衝撃音と下降する警告音</summary>
+        public static AudioClip PlayerDestroyed()
+        {
+            float duration = 1.4f;
+            int samples = (int)(SampleRate * duration);
+            var data = new float[samples];
+            var random = new System.Random();
+            float filteredNoise = 0f;
+            float lowPhase = 0f;
+            float highPhase = 0f;
+
+            for (int i = 0; i < samples; i++)
+            {
+                float t = (float)i / SampleRate;
+                float normalizedTime = t / duration;
+                float noise = (float)(random.NextDouble() * 2d - 1d);
+                filteredNoise = Mathf.Lerp(filteredNoise, noise, 0.08f);
+
+                float lowFrequency = Mathf.Lerp(150f, 38f, normalizedTime);
+                float highFrequency = Mathf.Lerp(720f, 110f, normalizedTime);
+                lowPhase += 2f * Mathf.PI * lowFrequency / SampleRate;
+                highPhase += 2f * Mathf.PI * highFrequency / SampleRate;
+
+                float impactEnvelope = Mathf.Exp(-t * 4.5f);
+                float alarmEnvelope = Mathf.Sin(Mathf.PI * normalizedTime) * 0.5f + 0.5f;
+                float impact = (filteredNoise * 0.55f + Mathf.Sin(lowPhase) * 0.35f) * impactEnvelope;
+                float alarm = Mathf.Sin(highPhase) * alarmEnvelope * (1f - normalizedTime) * 0.3f;
+                data[i] = (impact + alarm) * 0.8f;
+            }
+
+            return CreateClip("PlayerDestroyed", data);
+        }
+
         /// <summary>シールド被弾: 短い金属音</summary>
         public static AudioClip ShieldHit()
         {

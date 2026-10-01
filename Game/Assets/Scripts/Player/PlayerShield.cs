@@ -82,6 +82,7 @@ namespace ThreeDimensionShooter
             IsDowned = true;
             _downedStartedAt = Time.unscaledTime;
             BuildCracks();
+            AudioManager.Instance?.PlayPlayerDestroyed();
             _downedRoutine = StartCoroutine(HandleDowned());
         }
 

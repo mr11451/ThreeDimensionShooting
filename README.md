@@ -58,6 +58,10 @@ ThreeDimension/
 - [x] 自機コントローラー(PlayerShipController)
 - [x] 武装の骨組み(PlayerWeapons)
 - [x] シールド自動回復(PlayerShield)
+- [x] 撃墜演出(赤い半透明オーバーレイと窓のひび割れ、3秒間)
+- [x] 残機制(初期3機、再出撃、再出撃後2秒間の無敵時間)
+- [x] 接触ダメージ(敵機100、星10)
+- [x] 星空を一定数維持(120個の星を再配置)
 - [x] 敵基底 + 追跡型(EnemyBase / ChaserEnemy)
 - [x] ゲーム進行(GameManager: スコア・コンボ・ウェーブ)
 - [x] ワイヤーフレームシェーダー(WireframeUnlit)
@@ -66,7 +70,7 @@ ThreeDimension/
 - [x] タイトル / ゲームオーバー画面の基本コントローラー
 - [x] 敵弾・ミサイル実体・ロックオン処理(Bullet / Missile / PlayerWeapons)
 - [x] 敵プレハブ(ワイヤーフレーム見た目)作成(ChaserEnemy)
-- [x] HUD(シールド/スコア/コンボ/ミサイル/ウェーブ表示)
+- [x] HUD(シールド/残機/スコア/コンボ/ミサイル/ウェーブ表示)
 - [x] 敵の射撃(EnemyBullet / ChaserEnemy の Fire 実装)
 - [x] ゲームオーバー → GameOver シーン遷移
 - [x] 効果音(プロシージャル生成: ショット/ミサイル/爆発/被弾/ロックオン)

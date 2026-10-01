@@ -20,6 +20,7 @@ namespace ThreeDimensionShooter
         private AudioClip _shotClip;
         private AudioClip _missileClip;
         private AudioClip _explosionClip;
+        private AudioClip _playerDestroyedClip;
         private AudioClip _hitClip;
         private AudioClip _lockOnClip;
         private AudioClip _bgmClip;
@@ -50,6 +51,7 @@ namespace ThreeDimensionShooter
             _shotClip = ProceduralAudio.LaserShot();
             _missileClip = ProceduralAudio.MissileLaunch();
             _explosionClip = ProceduralAudio.Explosion();
+            _playerDestroyedClip = ProceduralAudio.PlayerDestroyed();
             _hitClip = ProceduralAudio.ShieldHit();
             _lockOnClip = ProceduralAudio.LockOn();
             _bgmClip = ProceduralAudio.BgmLoop();
@@ -58,6 +60,7 @@ namespace ThreeDimensionShooter
         public void PlayShot() => PlaySE(_shotClip);
         public void PlayMissile() => PlaySE(_missileClip);
         public void PlayExplosion() => PlaySE(_explosionClip);
+        public void PlayPlayerDestroyed() => PlaySE(_playerDestroyedClip);
         public void PlayHit() => PlaySE(_hitClip);
         public void PlayLockOn() => PlaySE(_lockOnClip);
 
