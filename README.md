@@ -1,4 +1,4 @@
-# ThreeDimension
+﻿# ThreeDimension
 
 一人称視点で 3D 空間を飛び回り、敵宇宙船を撃墜するスペースシューティングゲーム。
 
@@ -37,13 +37,27 @@ ThreeDimension/
 | 入力 | 動作 |
 | --- | --- |
 | 左スティック | 機体の上下左右スラスト |
-| 右スティック | 視点 / 機体の向き |
-| RT | 前進 |
-| LT | 後退 |
+| 右スティック | 視点 / 機体の向き(倒し量でアナログに旋回速度が変化) |
+| RT | 前進(押し込み量でアナログに加速、最大 ForwardThrust) |
+| LT | 後退(押し込み量でアナログに加速) |
 | RB | メインショット(連射) |
 | LB ホールド | ロックオン(範囲内の敵を複数捕捉) |
 | LB 解除 | ロックオンミサイル発射 |
 | Start | ポーズ(検討中) |
+
+### 調整用設定ファイル
+
+慣性・加速・旋回などは `Game/Assets/StreamingAssets/FlightSettings.txt` (`キー = 値`、`#` でコメント)で調整できる。ビルド版でも `ThreeDimensionShooter_Data/StreamingAssets/` 内を編集すれば再ビルド不要。ファイルの値はシーン保存値より優先される。
+
+| キー | 内容 |
+| --- | --- |
+| LateralThrust / ForwardThrust | 横・前後の最大加速度 |
+| MaxSpeed | 最高速度 |
+| TriggerDeadZone | トリガーの遊び |
+| CoastDeceleration | 入力を離したときの減速(慣性。0 で止まらない) |
+| MaxTurnRate | 右スティック最大時の旋回速度(度/秒) |
+| LookDeadZone / LookResponseCurve | 右スティックの遊び / 応答カーブ指数 |
+| RollLerp / BankOnStrafeDeg | バンク追従速度 / 横移動時の最大バンク角 |
 
 ## セットアップ
 
@@ -61,7 +75,11 @@ ThreeDimension/
 - [x] 撃墜演出(赤い半透明オーバーレイと窓のひび割れ、3秒間)
 - [x] 残機制(初期3機、再出撃、再出撃後2秒間の無敵時間)
 - [x] 接触ダメージ(敵機100、星100)
-- [x] 星空を一定数維持(120個の星を再配置)
+- [x] 軽量化(星40個、敵・星は低ポリ球メッシュ 3x4 分割)
+- [x] 慣性付き移動(トリガー・右スティックはアナログ入力)
+- [x] 自機原点固定 + 世界の相対移動
+- [x] ハイスコア保存(PlayerPrefs)
+- [x] 星空を一定数維持(40個の星を再配置)
 - [x] 敵基底 + 追跡型(EnemyBase / ChaserEnemy)
 - [x] ゲーム進行(GameManager: スコア・コンボ・ウェーブ)
 - [x] ワイヤーフレームシェーダー(WireframeUnlit)

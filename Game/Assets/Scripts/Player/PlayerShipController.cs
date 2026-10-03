@@ -19,7 +19,11 @@ namespace ThreeDimensionShooter
         [SerializeField] private float _triggerDeadZone = 0.05f;
 
         [Header("Look")]
-        [SerializeField] private float _lookSensitivity = 2.5f;
+        [SerializeField] private float _maxTurnRateDeg = 150f;
+        [Tooltip("右スティックの遊び(0..0.9)")]
+        [SerializeField] private float _lookDeadZone = 0.1f;
+        [Tooltip("応答カーブの指数。1=線形、大きいほど微小入力が繊細になる")]
+        [SerializeField] private float _lookResponseCurve = 1.5f;
         [SerializeField] private float _rollLerp = 6f;
         [SerializeField] private float _bankOnStrafeDeg = 25f;
 
@@ -54,7 +58,9 @@ namespace ThreeDimensionShooter
             if (v.TryGetValue("MaxSpeed", out f)) _maxSpeed = f;
             if (v.TryGetValue("TriggerDeadZone", out f)) _triggerDeadZone = Mathf.Clamp(f, 0f, 0.9f);
             if (v.TryGetValue("CoastDeceleration", out f)) _coastDeceleration = Mathf.Max(0f, f);
-            if (v.TryGetValue("LookSensitivity", out f)) _lookSensitivity = f;
+            if (v.TryGetValue("MaxTurnRate", out f)) _maxTurnRateDeg = f;
+            if (v.TryGetValue("LookDeadZone", out f)) _lookDeadZone = Mathf.Clamp(f, 0f, 0.9f);
+            if (v.TryGetValue("LookResponseCurve", out f)) _lookResponseCurve = Mathf.Max(0.1f, f);
             if (v.TryGetValue("RollLerp", out f)) _rollLerp = f;
             if (v.TryGetValue("BankOnStrafeDeg", out f)) _bankOnStrafeDeg = f;
         }
@@ -131,10 +137,22 @@ namespace ThreeDimensionShooter
             return Mathf.Clamp01((value - _triggerDeadZone) / (1f - _triggerDeadZone));
         }
 
+        private Vector2 ShapeLookInput(Vector2 raw)
+        {
+            float magnitude = Mathf.Min(raw.magnitude, 1f);
+            if (magnitude <= _lookDeadZone) return Vector2.zero;
+
+            float normalized = (magnitude - _lookDeadZone) / (1f - _lookDeadZone);
+            float shaped = Mathf.Pow(normalized, _lookResponseCurve);
+            return raw.normalized * shaped;
+        }
+
         private void ApplyLook()
         {
-            _yaw += _lookInput.x * _lookSensitivity;
-            _pitch -= _lookInput.y * _lookSensitivity;
+            // スティックの倒し量に応じた角速度(度/秒)。遊びを除いた後、カーブをかけて 0..MaxTurnRate に写す。
+            Vector2 turn = ShapeLookInput(_lookInput) * _maxTurnRateDeg * Time.deltaTime;
+            _yaw += turn.x;
+            _pitch -= turn.y;
 
             // 横移動時にバンク(見た目の傾き)
             float targetRoll = -_moveInput.x * _bankOnStrafeDeg;
