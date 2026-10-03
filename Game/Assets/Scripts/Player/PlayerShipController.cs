@@ -6,7 +6,7 @@ namespace ThreeDimensionShooter
     /// <summary>
     /// 自機の移動・旋回を担当する。ゲームパッド前提の操作。
     /// 左スティック: 上下左右スラスト / 右スティック: 視点(機体の向き)
-    /// RB/LB: 前後スラスト。アーケード寄りの機敏な挙動。
+    /// RT/LT: 前後スラスト。アーケード寄りの機敏な挙動。
     /// </summary>
     [RequireComponent(typeof(Rigidbody))]
     public class PlayerShipController : MonoBehaviour
@@ -15,16 +15,19 @@ namespace ThreeDimensionShooter
         [SerializeField] private float _lateralThrust = 40f;
         [SerializeField] private float _forwardThrust = 60f;
         [SerializeField] private float _maxSpeed = 60f;
+        [Tooltip("トリガーの遊び(0..0.9)")]
+        [SerializeField] private float _triggerDeadZone = 0.05f;
 
         [Header("Look")]
         [SerializeField] private float _lookSensitivity = 2.5f;
         [SerializeField] private float _rollLerp = 6f;
         [SerializeField] private float _bankOnStrafeDeg = 25f;
 
-        [Header("Damping (Arcade feel)")]
-        [SerializeField] private float _linearDragWhenNoInput = 3f;
-        [SerializeField] private float _linearDragNormal = 0.5f;
+        [Header("Inertia")]
+        [Tooltip("入力がないときの減速度(小さいほど慣性が強い)")]
+        [SerializeField] private float _coastDeceleration = 8f;
 
+        private Vector3 _velocity;
         private Rigidbody _rb;
         private Vector2 _moveInput;
         private Vector2 _lookInput;
@@ -35,11 +38,25 @@ namespace ThreeDimensionShooter
 
         private void Awake()
         {
+            ApplyExternalSettings();
             _rb = GetComponent<Rigidbody>();
             _playerShield = GetComponent<PlayerShield>();
             _rb.useGravity = false;
             _rb.interpolation = RigidbodyInterpolation.Interpolate;
             _rb.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
+        }
+
+        private void ApplyExternalSettings()
+        {
+            var v = FlightSettingsFile.Load();
+            if (v.TryGetValue("LateralThrust", out float f)) _lateralThrust = f;
+            if (v.TryGetValue("ForwardThrust", out f)) _forwardThrust = f;
+            if (v.TryGetValue("MaxSpeed", out f)) _maxSpeed = f;
+            if (v.TryGetValue("TriggerDeadZone", out f)) _triggerDeadZone = Mathf.Clamp(f, 0f, 0.9f);
+            if (v.TryGetValue("CoastDeceleration", out f)) _coastDeceleration = Mathf.Max(0f, f);
+            if (v.TryGetValue("LookSensitivity", out f)) _lookSensitivity = f;
+            if (v.TryGetValue("RollLerp", out f)) _rollLerp = f;
+            if (v.TryGetValue("BankOnStrafeDeg", out f)) _bankOnStrafeDeg = f;
         }
 
         private void Update()
@@ -58,6 +75,8 @@ namespace ThreeDimensionShooter
 
         private void FixedUpdate()
         {
+            transform.position = Vector3.zero;
+
             if (_playerShield != null && _playerShield.IsDowned)
             {
                 _rb.linearVelocity = Vector3.zero;
@@ -100,10 +119,16 @@ namespace ThreeDimensionShooter
             _moveInput = pad.leftStick.ReadValue();
             _lookInput = pad.rightStick.ReadValue();
 
-            // バンパー: RB=前進, LB=後退。RT はメインショット専用。
-            float fwd = pad.rightShoulder.isPressed ? 1f : 0f;
-            float back = pad.leftShoulder.isPressed ? 1f : 0f;
+            // トリガー: RT=前進, LT=後退(押し込み量 0..1 のアナログ)。RB/LB は武装専用。
+            float fwd = ApplyDeadZone(pad.rightTrigger.ReadValue());
+            float back = ApplyDeadZone(pad.leftTrigger.ReadValue());
             _throttleInput = fwd - back;
+        }
+
+        private float ApplyDeadZone(float value)
+        {
+            if (value <= _triggerDeadZone) return 0f;
+            return Mathf.Clamp01((value - _triggerDeadZone) / (1f - _triggerDeadZone));
         }
 
         private void ApplyLook()
@@ -119,23 +144,32 @@ namespace ThreeDimensionShooter
 
         private void ApplyThrust()
         {
-            Vector3 localDir = new Vector3(_moveInput.x, _moveInput.y, _throttleInput);
-            bool hasInput = localDir.sqrMagnitude > 0.001f;
+            // 前後はトリガーの押し込み量(0..1)に比例し、ForwardThrust を最大加速度とする。
+            Vector2 lateral = Vector2.ClampMagnitude(_moveInput, 1f);
+            Vector3 localAccel = new Vector3(
+                lateral.x * _lateralThrust,
+                lateral.y * _lateralThrust,
+                _throttleInput * _forwardThrust);
+            bool hasInput = localAccel.sqrMagnitude > 0.0001f;
 
-            _rb.linearDamping = hasInput ? _linearDragNormal : _linearDragWhenNoInput;
-            if (!hasInput) return;
+            if (hasInput)
+            {
+                _velocity += transform.TransformDirection(localAccel) * Time.fixedDeltaTime;
+            }
+            else
+            {
+                _velocity = Vector3.MoveTowards(_velocity, Vector3.zero, _coastDeceleration * Time.fixedDeltaTime);
+            }
 
-            Vector3 world = transform.TransformDirection(localDir.normalized);
-            float power = (Mathf.Abs(localDir.z) > 0.01f) ? _forwardThrust : _lateralThrust;
-            _rb.AddForce(world * power, ForceMode.Acceleration);
+            _velocity = Vector3.ClampMagnitude(_velocity, _maxSpeed);
+
+            WorldRelativeMotion.ApplyDelta(-_velocity * Time.fixedDeltaTime);
+            _rb.linearVelocity = Vector3.zero;
         }
 
         private void ClampSpeed()
         {
-            if (_rb.linearVelocity.magnitude > _maxSpeed)
-            {
-                _rb.linearVelocity = _rb.linearVelocity.normalized * _maxSpeed;
-            }
+            // 自機自体は原点固定。世界の相対移動で速度感を表現するため、Rigidbody の速度を抑制しない。
         }
     }
 }

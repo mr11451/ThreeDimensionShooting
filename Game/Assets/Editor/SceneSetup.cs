@@ -160,11 +160,18 @@ namespace ThreeDimensionShooter.EditorTools
             var canvas = CreateCanvas("Canvas");
             var title = CreateText(canvas.transform, "TitleText", "3D SHOOTING", 96, new Vector2(0, 150), TextAnchor.MiddleCenter);
             title.color = new Color(0.3f, 1f, 0.7f); // ネオングリーン
+
+            var highScoreText = CreateText(canvas.transform, "HighScoreText", "HIGH SCORE  0", 28, new Vector2(0, 40), TextAnchor.MiddleCenter);
+            highScoreText.color = new Color(0.95f, 0.95f, 0.7f);
+
             var prompt = CreateText(canvas.transform, "PromptText", "Press Start / Space", 36, new Vector2(0, -120), TextAnchor.MiddleCenter);
             prompt.color = new Color(0.9f, 0.9f, 1f);
 
             var ctrl = new GameObject("TitleController");
-            ctrl.AddComponent<TitleController>();
+            var titleController = ctrl.AddComponent<TitleController>();
+            var so = new SerializedObject(titleController);
+            so.FindProperty("_legacyHighScoreText").objectReferenceValue = highScoreText;
+            so.ApplyModifiedPropertiesWithoutUndo();
 
             SaveScene(scene, path);
         }

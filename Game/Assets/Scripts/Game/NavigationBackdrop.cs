@@ -9,7 +9,7 @@ namespace ThreeDimensionShooter
     /// </summary>
     public sealed class NavigationBackdrop : MonoBehaviour
     {
-        private const int StarCount = 120;
+        private const int StarCount = 40;
 
         [SerializeField] private int _seed = 31415;
         [SerializeField] private float _starMinDistance = 400f;
@@ -46,6 +46,25 @@ namespace ThreeDimensionShooter
                 if (distanceSqr > maxDistanceSqr)
                 {
                     PlaceStar(star);
+                }
+            }
+        }
+
+        public void ApplyWorldDelta(Vector3 delta)
+        {
+            if (delta == Vector3.zero)
+            {
+                return;
+            }
+
+            transform.position += delta;
+
+            if (_stars == null) return;
+            foreach (var star in _stars)
+            {
+                if (star != null)
+                {
+                    star.position += delta;
                 }
             }
         }
@@ -105,14 +124,74 @@ namespace ThreeDimensionShooter
 
         private static GameObject CreatePrimitive(string objectName, PrimitiveType type, Transform parent, Vector3 position, float size, Material material)
         {
-            var go = GameObject.CreatePrimitive(type);
-            go.name = objectName;
+            var go = new GameObject(objectName);
             go.transform.SetParent(parent, false);
             go.transform.localPosition = position;
             go.transform.localScale = Vector3.one * size;
-            go.GetComponent<Renderer>().sharedMaterial = material;
+
+            var meshFilter = go.AddComponent<MeshFilter>();
+            meshFilter.sharedMesh = CreateLowPolySphereMesh();
+
+            var renderer = go.AddComponent<MeshRenderer>();
+            renderer.sharedMaterial = material;
+
+            var collider = go.AddComponent<SphereCollider>();
+            collider.radius = 0.5f;
 
             return go;
+        }
+
+        private static Mesh CreateLowPolySphereMesh()
+        {
+            const int latitudeSegments = 3;
+            const int longitudeSegments = 4;
+
+            var vertices = new List<Vector3>();
+            var triangles = new List<int>();
+
+            for (int lat = 0; lat <= latitudeSegments; lat++)
+            {
+                float v = (float)lat / latitudeSegments;
+                float theta = v * Mathf.PI;
+                float y = Mathf.Cos(theta);
+                float radius = Mathf.Sin(theta);
+
+                for (int lon = 0; lon <= longitudeSegments; lon++)
+                {
+                    float u = (float)lon / longitudeSegments;
+                    float phi = u * Mathf.PI * 2f;
+                    float x = Mathf.Cos(phi) * radius;
+                    float z = Mathf.Sin(phi) * radius;
+                    vertices.Add(new Vector3(x, y, z));
+                }
+            }
+
+            for (int lat = 0; lat < latitudeSegments; lat++)
+            {
+                for (int lon = 0; lon < longitudeSegments; lon++)
+                {
+                    int current = lat * (longitudeSegments + 1) + lon;
+                    int next = current + longitudeSegments + 1;
+
+                    triangles.Add(current);
+                    triangles.Add(next);
+                    triangles.Add(current + 1);
+
+                    triangles.Add(current + 1);
+                    triangles.Add(next);
+                    triangles.Add(next + 1);
+                }
+            }
+
+            var mesh = new Mesh
+            {
+                name = "LowPolySphere",
+                vertices = vertices.ToArray(),
+                triangles = triangles.ToArray(),
+            };
+            mesh.RecalculateNormals();
+            mesh.RecalculateBounds();
+            return mesh;
         }
 
         private static Material CreateMaterial(string shaderName, Color color)

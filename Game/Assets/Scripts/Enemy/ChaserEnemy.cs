@@ -47,7 +47,11 @@ namespace ThreeDimensionShooter
         {
             if (_player == null || !IsAlive) return;
 
-            Vector3 toPlayer = _player.position - transform.position;
+            // 自機を原点に固定した設計では、敵は「自機の位置 = 0」を目標として振る舞う。
+            Vector3 toPlayer = _player.position == Vector3.zero
+                ? -transform.position
+                : _player.position - transform.position;
+
             float playerDistance = toPlayer.magnitude;
             Vector3 approachDirection = (toPlayer.sqrMagnitude > 0.001f)
                 ? toPlayer.normalized
@@ -72,7 +76,7 @@ namespace ThreeDimensionShooter
             _currentSpeed = Mathf.MoveTowards(_currentSpeed, targetSpeed, _speedChangeRate * Time.fixedDeltaTime);
             _rb.linearVelocity = _rb.rotation * Vector3.forward * _currentSpeed;
 
-            if (toPlayer.magnitude <= _attackRange)
+            if (playerDistance <= _attackRange)
             {
                 _fireTimer -= Time.fixedDeltaTime;
                 if (_fireTimer <= 0f)
@@ -107,8 +111,15 @@ namespace ThreeDimensionShooter
         {
             if (_bulletPrefab == null || _player == null) return;
 
-            // プレイヤー方向にわずかな拡散を付けて発射
-            Vector3 dir = (_player.position - transform.position).normalized;
+            // 自機を原点固定する設計では、プレイヤー方向は 0 を基準に計算する。
+            Vector3 targetDirection = _player.position == Vector3.zero
+                ? -transform.position
+                : _player.position - transform.position;
+
+            Vector3 dir = targetDirection.sqrMagnitude > 0.001f
+                ? targetDirection.normalized
+                : transform.forward;
+
             Quaternion spread = Quaternion.Euler(
                 Random.Range(-_bulletSpreadDeg, _bulletSpreadDeg),
                 Random.Range(-_bulletSpreadDeg, _bulletSpreadDeg),

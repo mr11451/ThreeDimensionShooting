@@ -103,14 +103,15 @@ namespace ThreeDimensionShooter.EditorTools
             var existing = AssetDatabase.LoadAssetAtPath<GameObject>(path);
             if (existing != null) return existing;
 
-            var go = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-            go.name = "ChaserEnemy";
+            var go = new GameObject("ChaserEnemy");
+            var meshFilter = go.AddComponent<MeshFilter>();
+            meshFilter.sharedMesh = CreateLowPolySphereMesh();
             go.transform.localScale = new Vector3(1.5f, 1.5f, 2.5f);
 
-            var renderer = go.GetComponent<MeshRenderer>();
+            var renderer = go.AddComponent<MeshRenderer>();
             renderer.sharedMaterial = mat;
 
-            var collider = go.GetComponent<Collider>();
+            var collider = go.AddComponent<SphereCollider>();
             collider.isTrigger = true;
 
             var rb = go.AddComponent<Rigidbody>();
@@ -130,13 +131,15 @@ namespace ThreeDimensionShooter.EditorTools
             var existing = AssetDatabase.LoadAssetAtPath<GameObject>(path);
             if (existing != null) return existing;
 
-            var go = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-            go.name = "Bullet";
+            var go = new GameObject("Bullet");
+            var meshFilter = go.AddComponent<MeshFilter>();
+            meshFilter.sharedMesh = CreateLowPolySphereMesh();
             go.transform.localScale = Vector3.one * 0.3f;
 
-            go.GetComponent<MeshRenderer>().sharedMaterial = mat;
+            var renderer = go.AddComponent<MeshRenderer>();
+            renderer.sharedMaterial = mat;
 
-            var collider = go.GetComponent<Collider>();
+            var collider = go.AddComponent<SphereCollider>();
             collider.isTrigger = true;
 
             var rb = go.AddComponent<Rigidbody>();
@@ -180,13 +183,15 @@ namespace ThreeDimensionShooter.EditorTools
             var existing = AssetDatabase.LoadAssetAtPath<GameObject>(path);
             if (existing != null) return existing;
 
-            var go = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-            go.name = "EnemyBullet";
+            var go = new GameObject("EnemyBullet");
+            var meshFilter = go.AddComponent<MeshFilter>();
+            meshFilter.sharedMesh = CreateLowPolySphereMesh();
             go.transform.localScale = Vector3.one * 0.4f;
 
-            go.GetComponent<MeshRenderer>().sharedMaterial = mat;
+            var renderer = go.AddComponent<MeshRenderer>();
+            renderer.sharedMaterial = mat;
 
-            var collider = go.GetComponent<Collider>();
+            var collider = go.AddComponent<SphereCollider>();
             collider.isTrigger = true;
 
             var rb = go.AddComponent<Rigidbody>();
@@ -197,6 +202,70 @@ namespace ThreeDimensionShooter.EditorTools
             var prefab = PrefabUtility.SaveAsPrefabAsset(go, path);
             Object.DestroyImmediate(go);
             return prefab;
+        }
+
+        private static Mesh CreateLowPolySphereMesh()
+        {
+            const string meshPath = PrefabDir + "/LowPolySphere.asset";
+            var saved = AssetDatabase.LoadAssetAtPath<Mesh>(meshPath);
+            if (saved != null) return saved;
+
+            var mesh = BuildLowPolySphereMesh();
+            AssetDatabase.CreateAsset(mesh, meshPath);
+            return mesh;
+        }
+
+        private static Mesh BuildLowPolySphereMesh()
+        {
+            const int latitudeSegments = 3;
+            const int longitudeSegments = 4;
+
+            var vertices = new System.Collections.Generic.List<Vector3>();
+            var triangles = new System.Collections.Generic.List<int>();
+
+            for (int lat = 0; lat <= latitudeSegments; lat++)
+            {
+                float v = (float)lat / latitudeSegments;
+                float theta = v * Mathf.PI;
+                float y = Mathf.Cos(theta);
+                float radius = Mathf.Sin(theta);
+
+                for (int lon = 0; lon <= longitudeSegments; lon++)
+                {
+                    float u = (float)lon / longitudeSegments;
+                    float phi = u * Mathf.PI * 2f;
+                    float x = Mathf.Cos(phi) * radius;
+                    float z = Mathf.Sin(phi) * radius;
+                    vertices.Add(new Vector3(x, y, z) * 0.5f);
+                }
+            }
+
+            for (int lat = 0; lat < latitudeSegments; lat++)
+            {
+                for (int lon = 0; lon < longitudeSegments; lon++)
+                {
+                    int current = lat * (longitudeSegments + 1) + lon;
+                    int next = current + longitudeSegments + 1;
+
+                    triangles.Add(current);
+                    triangles.Add(next);
+                    triangles.Add(current + 1);
+
+                    triangles.Add(current + 1);
+                    triangles.Add(next);
+                    triangles.Add(next + 1);
+                }
+            }
+
+            var mesh = new Mesh
+            {
+                name = "LowPolySphere",
+                vertices = vertices.ToArray(),
+                triangles = triangles.ToArray(),
+            };
+            mesh.RecalculateNormals();
+            mesh.RecalculateBounds();
+            return mesh;
         }
 
         private static void AssignEnemyToWaveManager(GameObject enemyPrefab)

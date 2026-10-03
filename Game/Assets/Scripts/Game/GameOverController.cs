@@ -15,9 +15,14 @@ namespace ThreeDimensionShooter
 
         private void Start()
         {
-            if (_scoreView != null && GameManager.Instance != null)
+            if (GameManager.Instance != null)
             {
-                _scoreView.SetScore(GameManager.Instance.Score);
+                var finalScore = GameManager.Instance.Score;
+                var bestScore = HighScoreStore.UpdateHighScore(finalScore);
+                if (_scoreView != null)
+                {
+                    _scoreView.SetScore(finalScore, bestScore);
+                }
             }
         }
 

@@ -47,7 +47,7 @@ namespace ThreeDimensionShooter
         private void OnGUI()
         {
             var pad = Gamepad.current;
-            if (pad == null || !pad.leftTrigger.isPressed || _missileStock <= 0 || _lockRangeTexture == null) return;
+            if (pad == null || !pad.leftShoulder.isPressed || _missileStock <= 0 || _lockRangeTexture == null) return;
 
             float expansion = Mathf.InverseLerp(_lockOnAngleDeg, _maxLockOnAngleDeg, _currentLockOnAngleDeg);
             float ringSize = Mathf.Lerp(180f, 300f, expansion);
@@ -65,15 +65,15 @@ namespace ThreeDimensionShooter
 
             _fireCooldown -= Time.deltaTime;
 
-            // RT: メインショット
-            if (pad.rightTrigger.isPressed && _fireCooldown <= 0f)
+            // RB: メインショット
+            if (pad.rightShoulder.isPressed && _fireCooldown <= 0f)
             {
                 FireMainShot();
                 _fireCooldown = _fireRate;
             }
 
-            // LT: ホールドでロックオン、離してミサイル発射
-            bool lockHeld = pad.leftTrigger.isPressed;
+            // LB: ホールドでロックオン、離してミサイル発射
+            bool lockHeld = pad.leftShoulder.isPressed;
             if (lockHeld && _missileStock > 0)
             {
                 _currentLockOnAngleDeg = Mathf.MoveTowards(

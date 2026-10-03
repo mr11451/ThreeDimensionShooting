@@ -914,6 +914,7 @@ MonoBehaviour:
   _seed: 31415
   _starMinDistance: 400
   _starMaxDistance: 1200
+  _starCollisionDamage: 100
   _starMaterial: {fileID: 2100000, guid: b11f6e26ea1aa5f439e3f9c45ea2032d, type: 2}
 --- !u!4 &1478089860
 Transform:
@@ -1214,6 +1215,7 @@ MonoBehaviour:
   _comboCount: 0
   _comboResetSeconds: 4
   _currentWave: 0
+  _startingLives: 3
 --- !u!4 &1673288735
 Transform:
   m_ObjectHideFlags: 0
@@ -1545,8 +1547,7 @@ MonoBehaviour:
   _lookSensitivity: 2.5
   _rollLerp: 6
   _bankOnStrafeDeg: 25
-  _linearDragWhenNoInput: 3
-  _linearDragNormal: 0.5
+  _coastDeceleration: 8
 --- !u!54 &1841879949
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -1603,9 +1604,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _visible: 1
-  _distance: 2.2
-  _pillarWidth: 0.08
-  _pillarHeight: 1.4
 --- !u!1 &1853700861
 GameObject:
   m_ObjectHideFlags: 0
@@ -1821,7 +1819,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5c22ddddfa2718745be6295496e9c867, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _chaserPrefab: {fileID: 6618603332051911414, guid: 8bdbc96bac2a0074980a0ac6f93cdc88, type: 3}
+  _chaserPrefab: {fileID: 7397963531826407275, guid: 8bdbc96bac2a0074980a0ac6f93cdc88, type: 3}
   _spawnRadius: 80
   _baseEnemyCount: 3
   _enemyCountPerWave: 1

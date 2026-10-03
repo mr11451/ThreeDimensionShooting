@@ -1,6 +1,8 @@
+using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 
 namespace ThreeDimensionShooter
 {
@@ -10,6 +12,13 @@ namespace ThreeDimensionShooter
     public class TitleController : MonoBehaviour
     {
         [SerializeField] private string _gameSceneName = "Game";
+        [SerializeField] private TMP_Text _highScoreText;
+        [SerializeField] private Text _legacyHighScoreText;
+
+        private void Start()
+        {
+            UpdateHighScoreText();
+        }
 
         private void Update()
         {
@@ -30,6 +39,27 @@ namespace ThreeDimensionShooter
             if (start)
             {
                 SceneManager.LoadScene(_gameSceneName);
+            }
+        }
+
+        private void UpdateHighScoreText()
+        {
+            object target = _highScoreText != null ? (object)_highScoreText : _legacyHighScoreText;
+            if (target == null)
+            {
+                return;
+            }
+
+            var content = $"HIGH SCORE  {HighScoreStore.BestScore:N0}";
+            if (target is TMP_Text tmpText)
+            {
+                tmpText.text = content;
+                return;
+            }
+
+            if (target is Text uiText)
+            {
+                uiText.text = content;
             }
         }
     }
