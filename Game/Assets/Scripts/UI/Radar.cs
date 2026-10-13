@@ -24,7 +24,8 @@ namespace ThreeDimensionShooter
         private Texture2D _overlayTexture;
         private Texture2D _playerMarkerTexture;
         private Texture2D _enemyMarkerTexture;
-
+        private Texture2D _podMarkerTexture;
+        private Texture2D _homingMarkerTexture;
         private void Awake()
         {
             // ランタイムで円スプライトを生成して確実に適用
@@ -45,6 +46,8 @@ namespace ThreeDimensionShooter
             _overlayTexture = CreateOverlayTexture(256);
             _playerMarkerTexture = CreateSolidCircleTexture(12, new Color(0.3f, 1f, 0.6f, 1f));
             _enemyMarkerTexture = CreateSolidCircleTexture(8, _enemyColor);
+            _podMarkerTexture = CreateSolidCircleTexture(8, new Color(1f, 0.85f, 0.2f));
+            _homingMarkerTexture = CreateSolidCircleTexture(6, new Color(1f, 0.5f, 0.1f));
             ConfigureBlipContainer();
             // 背景を塗りつぶした円にして、Image の四隅が表示されないようにする
             var bg = GetComponent<Image>();
@@ -91,16 +94,31 @@ namespace ThreeDimensionShooter
 
             foreach (var enemy in enemies)
             {
-                Vector3 relative = inverseYaw * (enemy.transform.position - _player.position);
-                Vector2 mapPosition = new Vector2(relative.x, relative.z) / _range;
-                mapPosition = Vector2.ClampMagnitude(mapPosition, 1f) * _radarRadiusPx;
-                var position = radarRect.center + new Vector2(mapPosition.x, mapPosition.y);
-                GUI.DrawTexture(
-                    new Rect(position.x - markerSize * 0.5f, position.y - markerSize * 0.5f, markerSize, markerSize),
-                    _enemyMarkerTexture,
-                    ScaleMode.StretchToFill,
-                    true);
+                DrawMarker(radarRect, inverseYaw, enemy.transform.position, _enemyMarkerTexture, markerSize);
             }
+
+            foreach (var pod in MissileSupplyPod.Active)
+            {
+                DrawMarker(radarRect, inverseYaw, pod.transform.position, _podMarkerTexture, markerSize);
+            }
+
+            foreach (var missile in BossHomingMissile.Active)
+            {
+                DrawMarker(radarRect, inverseYaw, missile.transform.position, _homingMarkerTexture, markerSize);
+            }
+        }
+
+        private void DrawMarker(Rect radarRect, Quaternion inverseYaw, Vector3 worldPosition, Texture2D texture, float markerSize)
+        {
+            Vector3 relative = inverseYaw * (worldPosition - _player.position);
+            Vector2 mapPosition = new Vector2(relative.x, relative.z) / _range;
+            mapPosition = Vector2.ClampMagnitude(mapPosition, 1f) * _radarRadiusPx;
+            var position = radarRect.center + new Vector2(mapPosition.x, -mapPosition.y);
+            GUI.DrawTexture(
+                new Rect(position.x - markerSize * 0.5f, position.y - markerSize * 0.5f, markerSize, markerSize),
+                texture,
+                ScaleMode.StretchToFill,
+                true);
         }
 
         private static Texture2D CreateOverlayTexture(int size)
@@ -158,6 +176,8 @@ namespace ThreeDimensionShooter
             if (_overlayTexture != null) Destroy(_overlayTexture);
             if (_playerMarkerTexture != null) Destroy(_playerMarkerTexture);
             if (_enemyMarkerTexture != null) Destroy(_enemyMarkerTexture);
+            if (_podMarkerTexture != null) Destroy(_podMarkerTexture);
+            if (_homingMarkerTexture != null) Destroy(_homingMarkerTexture);
         }
 
         private void CreateCircularSurface()

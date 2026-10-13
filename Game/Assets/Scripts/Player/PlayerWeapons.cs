@@ -23,6 +23,7 @@ namespace ThreeDimensionShooter
         [SerializeField] private float _maxLockOnAngleDeg = 45f;
         [SerializeField] private float _lockOnExpandSpeed = 20f;
         [SerializeField] private int _maxLockTargets = 4;
+        [SerializeField] private float _podPullSpeed = 40f;
 
         [Header("Targeting")]
         [SerializeField] private LayerMask _enemyLayer = ~0; // デフォルト: 全レイヤー
@@ -74,6 +75,10 @@ namespace ThreeDimensionShooter
 
             // LB: ホールドでロックオン、離してミサイル発射
             bool lockHeld = pad.leftShoulder.isPressed;
+            if (lockHeld && _missileStock <= 0)
+            {
+                PullNearestSupplyPod();
+            }
             if (lockHeld && _missileStock > 0)
             {
                 _currentLockOnAngleDeg = Mathf.MoveTowards(
@@ -93,6 +98,24 @@ namespace ThreeDimensionShooter
                 _currentLockOnAngleDeg = _lockOnAngleDeg;
             }
             _wasLockHeld = lockHeld;
+        }
+
+        private void PullNearestSupplyPod()
+        {
+            MissileSupplyPod best = null;
+            float bestAngle = _maxLockOnAngleDeg;
+            foreach (var pod in MissileSupplyPod.Active)
+            {
+                Vector3 to = pod.transform.position - transform.position;
+                if (to.sqrMagnitude > _lockOnRadius * _lockOnRadius) continue;
+                float angle = Vector3.Angle(transform.forward, to);
+                if (angle <= bestAngle)
+                {
+                    bestAngle = angle;
+                    best = pod;
+                }
+            }
+            if (best != null) best.Pull(transform.position, _podPullSpeed);
         }
 
         private void FireMainShot()

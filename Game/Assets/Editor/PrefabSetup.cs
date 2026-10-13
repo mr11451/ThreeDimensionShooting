@@ -54,13 +54,15 @@ namespace ThreeDimensionShooter.EditorTools
             var wireRed = CreateWireMaterial("Wireframe_Red", new Color(1f, 0.2f, 0.3f));
             var wireGreen = CreateWireMaterial("Wireframe_Green", new Color(0.2f, 1f, 0.6f));
             var wireCyan = CreateWireMaterial("Wireframe_Cyan", new Color(0.2f, 0.9f, 1f));
+            var wireOrange = CreateWireMaterial("Wireframe_Orange", new Color(1f, 0.5f, 0.1f));
+            var wireYellow = CreateWireMaterial("Wireframe_Yellow", new Color(1f, 0.9f, 0.2f));
 
             var enemyPrefab = CreateEnemyPrefab(wireRed);
             var bossPrefab = CreateBossPrefab(wireRed);
             var bulletPrefab = CreateBulletPrefab(wireGreen);
             var missilePrefab = CreateMissilePrefab(wireCyan);
-            var bossMissilePrefab = CreateBossHomingMissilePrefab(wireCyan);
-            var missileSupplyPodPrefab = CreateMissileSupplyPodPrefab(wireCyan);
+            var bossMissilePrefab = CreateBossHomingMissilePrefab(wireOrange);
+            var missileSupplyPodPrefab = CreateMissileSupplyPodPrefab(wireYellow);
             var enemyBulletPrefab = CreateEnemyBulletPrefab(wireRed);
 
             AssignEnemyToWaveManager(enemyPrefab, bossPrefab);
@@ -215,11 +217,25 @@ namespace ThreeDimensionShooter.EditorTools
             return prefab;
         }
 
+        private static void ApplyLook(string path, Mesh mesh, Material mat, Vector3 scale)
+        {
+            var root = PrefabUtility.LoadPrefabContents(path);
+            root.transform.localScale = scale;
+            root.GetComponent<MeshFilter>().sharedMesh = mesh;
+            root.GetComponent<MeshRenderer>().sharedMaterial = mat;
+            PrefabUtility.SaveAsPrefabAsset(root, path);
+            PrefabUtility.UnloadPrefabContents(root);
+        }
+
         private static GameObject CreateBossHomingMissilePrefab(Material mat)
         {
             string path = $"{PrefabDir}/BossHomingMissile.prefab";
             var existing = AssetDatabase.LoadAssetAtPath<GameObject>(path);
-            if (existing != null) return existing;
+            if (existing != null)
+            {
+                ApplyLook(path, CreateLowPolySphereMesh(), mat, new Vector3(0.8f, 0.8f, 2f));
+                return existing;
+            }
 
             var go = new GameObject("BossHomingMissile");
             go.transform.localScale = new Vector3(0.8f, 0.8f, 2f);
@@ -243,11 +259,16 @@ namespace ThreeDimensionShooter.EditorTools
         {
             string path = $"{PrefabDir}/MissileSupplyPod.prefab";
             var existing = AssetDatabase.LoadAssetAtPath<GameObject>(path);
-            if (existing != null) return existing;
+            var cubeMesh = Resources.GetBuiltinResource<Mesh>("Cube.fbx");
+            if (existing != null)
+            {
+                ApplyLook(path, cubeMesh, mat, Vector3.one * 2.5f);
+                return existing;
+            }
 
             var go = new GameObject("MissileSupplyPod");
             go.transform.localScale = Vector3.one * 2.5f;
-            go.AddComponent<MeshFilter>().sharedMesh = CreateLowPolySphereMesh();
+            go.AddComponent<MeshFilter>().sharedMesh = cubeMesh;
             go.AddComponent<MeshRenderer>().sharedMaterial = mat;
 
             var collider = go.AddComponent<SphereCollider>();

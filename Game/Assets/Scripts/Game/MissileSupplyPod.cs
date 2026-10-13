@@ -12,6 +12,19 @@ namespace ThreeDimensionShooter
 
         private bool _collected;
 
+        public static readonly System.Collections.Generic.List<MissileSupplyPod> Active =
+            new System.Collections.Generic.List<MissileSupplyPod>();
+
+        private void OnEnable() => Active.Add(this);
+
+        private void OnDisable() => Active.Remove(this);
+
+        /// <summary>自機側へ引き寄せる。</summary>
+        public void Pull(Vector3 target, float speed)
+        {
+            transform.position = Vector3.MoveTowards(transform.position, target, speed * Time.deltaTime);
+        }
+
         private void Awake()
         {
             var pickupCollider = GetComponent<SphereCollider>();

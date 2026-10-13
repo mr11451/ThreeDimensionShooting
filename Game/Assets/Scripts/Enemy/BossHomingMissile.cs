@@ -20,6 +20,13 @@ namespace ThreeDimensionShooter
 
         public bool IsAlive => _hp > 0;
 
+        public static readonly System.Collections.Generic.List<BossHomingMissile> Active =
+            new System.Collections.Generic.List<BossHomingMissile>();
+
+        private void OnEnable() => Active.Add(this);
+
+        private void OnDisable() => Active.Remove(this);
+
         private void Awake()
         {
             _rb = GetComponent<Rigidbody>();

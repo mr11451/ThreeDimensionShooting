@@ -1508,6 +1508,7 @@ MonoBehaviour:
   _maxLockOnAngleDeg: 45
   _lockOnExpandSpeed: 20
   _maxLockTargets: 4
+  _podPullSpeed: 40
   _enemyLayer:
     serializedVersion: 2
     m_Bits: 4294967295
@@ -1830,6 +1831,8 @@ MonoBehaviour:
   _baseEnemyCount: 3
   _enemyCountPerWave: 1
   _player: {fileID: 0}
+  _waveInterval: 3
+  _bossClearInterval: 8
 --- !u!4 &2066001745
 Transform:
   m_ObjectHideFlags: 0
