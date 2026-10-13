@@ -47,6 +47,36 @@ namespace ThreeDimensionShooter
             return CreateClip("Missile", data);
         }
 
+        /// <summary>ボスへのメインショット命中: 短く高めの鈍い「コッ」</summary>
+        public static AudioClip BossShotHit()
+        {
+            return Thud("BossShotHit", 0.12f, 140f, 70f, 0.25f, 0.9f);
+        }
+
+        /// <summary>ボスへのミサイル命中: 長く低い重い「ドゥン」</summary>
+        public static AudioClip BossMissileHit()
+        {
+            return Thud("BossMissileHit", 0.4f, 70f, 35f, 0.4f, 1.1f);
+        }
+
+        private static AudioClip Thud(string name, float duration, float startFreq, float endFreq, float noiseMix, float gain)
+        {
+            int samples = (int)(SampleRate * duration);
+            var data = new float[samples];
+            var rng = new System.Random();
+            float low = 0f, phase = 0f;
+            for (int i = 0; i < samples; i++)
+            {
+                float t = (float)i / samples;
+                phase += 2f * Mathf.PI * Mathf.Lerp(startFreq, endFreq, t) / SampleRate;
+                float noise = (float)(rng.NextDouble() * 2.0 - 1.0);
+                low = Mathf.Lerp(low, noise, 0.08f);
+                float env = Mathf.Pow(1f - t, 3f);
+                data[i] = (Mathf.Sin(phase) * (1f - noiseMix) + low * noiseMix * 3f) * env * gain;
+            }
+            return CreateClip(name, data);
+        }
+
         /// <summary>爆発: 減衰するノイズ</summary>
         public static AudioClip Explosion()
         {

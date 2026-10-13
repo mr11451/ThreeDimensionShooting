@@ -32,6 +32,7 @@ namespace ThreeDimensionShooter
 
             if (other.TryGetComponent<EnemyBase>(out var enemy))
             {
+                if (enemy is BossEnemy) AudioManager.Instance?.PlayBossShotHit();
                 enemy.TakeDamage(_damage);
                 Destroy(gameObject);
             }

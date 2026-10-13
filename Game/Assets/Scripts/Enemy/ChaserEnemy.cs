@@ -34,6 +34,17 @@ namespace ThreeDimensionShooter
         private float _fireTimer;
         private float _currentSpeed;
         private bool _arrived;
+        private bool _inFormation;
+        private Vector3 _formationDirection;
+        private System.Collections.Generic.List<ChaserEnemy> _formationMembers;
+
+        /// <summary>編隊の一員として、到着フェーズでは全機が同じ方向へ平行に進む。</summary>
+        public void JoinFormation(Vector3 travelDirection, System.Collections.Generic.List<ChaserEnemy> members)
+        {
+            _formationMembers = members;
+            _inFormation = true;
+            _formationDirection = travelDirection.normalized;
+        }
 
         private void Awake()
         {
@@ -59,12 +70,36 @@ namespace ThreeDimensionShooter
 
             float playerDistance = toPlayer.magnitude;
 
+            // 編隊は 1 機でも撃墜されるまで維持し、隊形のまま接近して射撃する
+            if (_inFormation && IsFormationIntact())
+            {
+                _arrived = true;
+                // 編隊の重心を自機へ向ける(全機共通の方向なので隊形は保たれる)
+                Vector3 centroid = Vector3.zero;
+                foreach (var m in _formationMembers) centroid += m.transform.position;
+                centroid /= _formationMembers.Count;
+                Vector3 toCentroid = (_player.position == Vector3.zero ? -centroid : _player.position - centroid);
+                if (toCentroid.sqrMagnitude > 0.001f) _formationDirection = toCentroid.normalized;
+                float centroidDistance = toCentroid.magnitude;
+                _rb.MoveRotation(Quaternion.LookRotation(_formationDirection, Vector3.up));
+                float speed = centroidDistance > _arrivalEndDistance ? _arrivalSpeed
+                    : (centroidDistance > _minimumPlayerDistance ? _moveSpeed : 0f);
+                _rb.linearVelocity = _formationDirection * speed;
+                if (playerDistance <= _attackRange)
+                {
+                    _fireTimer -= Time.fixedDeltaTime;
+                    if (_fireTimer <= 0f) { Fire(); _fireTimer = _fireInterval; }
+                }
+                return;
+            }
+            _inFormation = false;
+
             // 遠方から高速で接近し、一定距離まで来たら通常行動に移る
             if (!_arrived)
             {
                 if (playerDistance > _arrivalEndDistance)
                 {
-                    Vector3 arrivalDirection = toPlayer / playerDistance;
+                    Vector3 arrivalDirection = _inFormation ? _formationDirection : toPlayer / playerDistance;
                     _rb.MoveRotation(Quaternion.LookRotation(arrivalDirection, Vector3.up));
                     _rb.linearVelocity = arrivalDirection * _arrivalSpeed;
                     return;
@@ -104,6 +139,13 @@ namespace ThreeDimensionShooter
                     _fireTimer = _fireInterval;
                 }
             }
+        }
+
+        private bool IsFormationIntact()
+        {
+            foreach (var m in _formationMembers)
+                if (m == null || !m.IsAlive) return false;
+            return true;
         }
 
         private Vector3 GetSeparationDirection()
@@ -149,3 +191,4 @@ namespace ThreeDimensionShooter
         }
     }
 }
+

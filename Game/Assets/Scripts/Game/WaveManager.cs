@@ -10,6 +10,8 @@ namespace ThreeDimensionShooter
     public class WaveManager : MonoBehaviour
     {
         private const int BossWaveInterval = 5;
+        private const int MinFormationSize = 4;
+        private const int FormationStartWave = 2;
 
         [Header("Spawn")]
         [SerializeField] private GameObject _chaserPrefab;
@@ -17,6 +19,7 @@ namespace ThreeDimensionShooter
         [SerializeField] private GameObject _missileSupplyPodPrefab;
         [SerializeField] private float _spawnDistance = 400f;
         [SerializeField] private float _spawnConeDeg = 30f;
+        [SerializeField] private float _formationSpacing = 12f;
         [SerializeField] private float _supplyPodSpawnRadius = 30f;
         [SerializeField] private int _baseEnemyCount = 3;
         [SerializeField] private int _enemyCountPerWave = 1;
@@ -100,6 +103,13 @@ namespace ThreeDimensionShooter
             if (_chaserPrefab == null) return;
 
             int count = _baseEnemyCount + wave * _enemyCountPerWave;
+            if (wave >= FormationStartWave && wave % 2 == 0 && count >= MinFormationSize)
+            {
+                SpawnFormations(pattern, count);
+                _waveActive = true;
+                return;
+            }
+
             for (int i = 0; i < count; i++)
             {
                 Vector3 dir = GetSpawnDirection(pattern);
@@ -111,6 +121,71 @@ namespace ThreeDimensionShooter
                 }
             }
             _waveActive = true;
+        }
+
+        private enum FormationShape
+        {
+            Line,
+            V,
+            L,
+        }
+
+        /// <summary>count 機を 4 機以上の編隊に分けて出現させる。</summary>
+        private void SpawnFormations(SpawnPattern pattern, int count)
+        {
+            int groups = Mathf.Max(1, count / MinFormationSize);
+            for (int g = 0; g < groups; g++)
+            {
+                int size = count / groups + (g < count % groups ? 1 : 0);
+                var shape = (FormationShape)Random.Range(0, System.Enum.GetValues(typeof(FormationShape)).Length);
+                SpawnFormation(shape, size, GetSpawnDirection(pattern));
+            }
+        }
+
+        private void SpawnFormation(FormationShape shape, int size, Vector3 spawnDirection)
+        {
+            Vector3 center = _player.position + spawnDirection * _spawnDistance;
+            Vector3 travel = -spawnDirection;
+            Quaternion facing = Quaternion.LookRotation(travel);
+            Debug.Log($"[WaveManager] Formation {shape} x{size}");
+
+            var members = new System.Collections.Generic.List<ChaserEnemy>();
+            for (int i = 0; i < size; i++)
+            {
+                Vector3 local = GetFormationOffset(shape, i, size) * _formationSpacing;
+                var go = Instantiate(_chaserPrefab, center + facing * local, facing);
+                if (go.TryGetComponent<ChaserEnemy>(out var chaser))
+                {
+                    chaser.JoinFormation(travel, members);
+                    members.Add(chaser);
+                    _alive.Add(chaser);
+                }
+            }
+        }
+
+        /// <summary>進行方向に垂直な面(x:右, y:上)での編隊内位置。単位は間隔の倍数。</summary>
+        private static Vector3 GetFormationOffset(FormationShape shape, int index, int size)
+        {
+            switch (shape)
+            {
+                case FormationShape.V:
+                {
+                    // 先頭(頂点)を下に置き、左右へ交互に開く
+                    int rank = (index + 1) / 2;
+                    float side = index % 2 == 1 ? -1f : 1f;
+                    return new Vector3(side * rank, rank, 0f);
+                }
+                case FormationShape.L:
+                {
+                    // 縦に並べ、下端から横へ折れる。縦3機+残りを横へ
+                    int vertical = Mathf.Max(2, size / 2 + 1);
+                    return index < vertical
+                        ? new Vector3(0f, index, 0f)
+                        : new Vector3(index - vertical + 1, 0f, 0f);
+                }
+                default:
+                    return new Vector3(index - (size - 1) * 0.5f, 0f, 0f);
+            }
         }
 
         private enum SpawnPattern
@@ -163,3 +238,4 @@ namespace ThreeDimensionShooter
         }
     }
 }
+
