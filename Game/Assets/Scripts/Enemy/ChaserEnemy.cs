@@ -25,10 +25,15 @@ namespace ThreeDimensionShooter
         [SerializeField] private GameObject _bulletPrefab;
         [SerializeField] private float _bulletSpreadDeg = 4f;
 
+        [Header("Arrival")]
+        [SerializeField] private float _arrivalSpeed = 250f;
+        [SerializeField] private float _arrivalEndDistance = 100f;
+
         private Rigidbody _rb;
         private Transform _player;
         private float _fireTimer;
         private float _currentSpeed;
+        private bool _arrived;
 
         private void Awake()
         {
@@ -53,6 +58,20 @@ namespace ThreeDimensionShooter
                 : _player.position - transform.position;
 
             float playerDistance = toPlayer.magnitude;
+
+            // 遠方から高速で接近し、一定距離まで来たら通常行動に移る
+            if (!_arrived)
+            {
+                if (playerDistance > _arrivalEndDistance)
+                {
+                    Vector3 arrivalDirection = toPlayer / playerDistance;
+                    _rb.MoveRotation(Quaternion.LookRotation(arrivalDirection, Vector3.up));
+                    _rb.linearVelocity = arrivalDirection * _arrivalSpeed;
+                    return;
+                }
+                _arrived = true;
+                _currentSpeed = _moveSpeed;
+            }
             Vector3 approachDirection = (toPlayer.sqrMagnitude > 0.001f)
                 ? toPlayer.normalized
                 : transform.forward;

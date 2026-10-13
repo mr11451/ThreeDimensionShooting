@@ -26,6 +26,8 @@ namespace ThreeDimensionShooter
         private Texture2D _enemyMarkerTexture;
         private Texture2D _podMarkerTexture;
         private Texture2D _homingMarkerTexture;
+        private Texture2D _linePixel;
+        private PlayerWeapons _weapons;
         private void Awake()
         {
             // ランタイムで円スプライトを生成して確実に適用
@@ -44,6 +46,9 @@ namespace ThreeDimensionShooter
             }
 
             _overlayTexture = CreateOverlayTexture(256);
+            _linePixel = new Texture2D(1, 1, TextureFormat.RGBA32, false);
+            _linePixel.SetPixel(0, 0, Color.white);
+            _linePixel.Apply();
             _playerMarkerTexture = CreateSolidCircleTexture(12, new Color(0.3f, 1f, 0.6f, 1f));
             _enemyMarkerTexture = CreateSolidCircleTexture(8, _enemyColor);
             _podMarkerTexture = CreateSolidCircleTexture(8, new Color(1f, 0.85f, 0.2f));
@@ -80,7 +85,62 @@ namespace ThreeDimensionShooter
                 ScaleMode.StretchToFill,
                 true);
 
+            DrawLockOnFan(rect);
             DrawEnemyMarkers(rect);
+        }
+
+        /// <summary>ロックオン中、前方(上)を中心にロック範囲を扇形でレーダーに重ねる。</summary>
+        private void DrawLockOnFan(Rect radarRect)
+        {
+            if (_weapons == null || !_weapons.IsLockOnActive) return;
+
+            float radius = Mathf.Min(_weapons.LockOnRadius / _range, 1f) * _radarRadiusPx;
+            float halfAngle = _weapons.CurrentLockOnAngleDeg;
+            Vector2 center = radarRect.center;
+            var edgeColor = new Color(1f, 0.8f, 0.2f, 0.9f);
+            var fillColor = new Color(1f, 0.8f, 0.2f, 0.12f);
+
+            const int arcSegments = 16;
+            const int fillRays = 12;
+
+            for (int i = 0; i <= fillRays; i++)
+            {
+                float angle = Mathf.Lerp(-halfAngle, halfAngle, i / (float)fillRays);
+                DrawRadarLine(center, center + FanPoint(angle, radius), 2f, fillColor);
+            }
+
+            Vector2 previous = center + FanPoint(-halfAngle, radius);
+            DrawRadarLine(center, previous, 1.5f, edgeColor);
+            for (int i = 1; i <= arcSegments; i++)
+            {
+                float angle = Mathf.Lerp(-halfAngle, halfAngle, i / (float)arcSegments);
+                Vector2 next = center + FanPoint(angle, radius);
+                DrawRadarLine(previous, next, 1.5f, edgeColor);
+                previous = next;
+            }
+            DrawRadarLine(previous, center, 1.5f, edgeColor);
+        }
+
+        // 画面座標は下向きがプラスなので、前方(上)を負のYで表す
+        private static Vector2 FanPoint(float angleDeg, float radius)
+        {
+            float rad = angleDeg * Mathf.Deg2Rad;
+            return new Vector2(Mathf.Sin(rad), -Mathf.Cos(rad)) * radius;
+        }
+
+        private void DrawRadarLine(Vector2 a, Vector2 b, float thickness, Color color)
+        {
+            Vector2 delta = b - a;
+            float length = delta.magnitude;
+            if (length < 0.01f || _linePixel == null) return;
+
+            var savedMatrix = GUI.matrix;
+            var savedColor = GUI.color;
+            GUI.color = color;
+            GUIUtility.RotateAroundPivot(Mathf.Atan2(delta.y, delta.x) * Mathf.Rad2Deg, a);
+            GUI.DrawTexture(new Rect(a.x, a.y - thickness * 0.5f, length, thickness), _linePixel);
+            GUI.matrix = savedMatrix;
+            GUI.color = savedColor;
         }
 
         private void DrawEnemyMarkers(Rect radarRect)
@@ -177,6 +237,7 @@ namespace ThreeDimensionShooter
             if (_playerMarkerTexture != null) Destroy(_playerMarkerTexture);
             if (_enemyMarkerTexture != null) Destroy(_enemyMarkerTexture);
             if (_podMarkerTexture != null) Destroy(_podMarkerTexture);
+            if (_linePixel != null) Destroy(_linePixel);
             if (_homingMarkerTexture != null) Destroy(_homingMarkerTexture);
         }
 
@@ -201,6 +262,7 @@ namespace ThreeDimensionShooter
         {
             var pc = FindFirstObjectByType<PlayerShipController>();
             if (pc != null) _player = pc.transform;
+            _weapons = FindFirstObjectByType<PlayerWeapons>();
         }
 
         private void Update()

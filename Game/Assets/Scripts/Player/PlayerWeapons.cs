@@ -36,6 +36,16 @@ namespace ThreeDimensionShooter
         private Texture2D _lockRangeTexture;
 
         public int MissileStock => _missileStock;
+        public float LockOnRadius => _lockOnRadius;
+        public float CurrentLockOnAngleDeg => _currentLockOnAngleDeg;
+        public bool IsLockOnActive
+        {
+            get
+            {
+                var pad = Gamepad.current;
+                return pad != null && pad.leftShoulder.isPressed && _missileStock > 0;
+            }
+        }
         public IReadOnlyList<Transform> LockTargets => _lockTargets;
 
         private void Awake()

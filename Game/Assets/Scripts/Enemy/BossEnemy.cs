@@ -26,7 +26,10 @@ namespace ThreeDimensionShooter
         private float _fireTimer;
         private float _homingMissileTimer;
         private float _orbitAngle;
+        private bool _arrived;
 
+        [Header("Arrival")]
+        [SerializeField] private float _arrivalSpeed = 150f;
         protected override float ExplosionScale => 4f;
 
         protected override void Die()
@@ -80,6 +83,19 @@ namespace ThreeDimensionShooter
             float radians = _orbitAngle * Mathf.Deg2Rad;
             Vector3 orbitOffset = new Vector3(Mathf.Cos(radians), Mathf.Sin(radians * 0.7f) * 0.25f, Mathf.Sin(radians));
             Vector3 targetPosition = playerPosition + orbitOffset * _orbitRadius;
+
+            // 遠方から高速で周回位置まで到着するまでは攻撃しない
+            if (!_arrived)
+            {
+                _rb.MovePosition(Vector3.MoveTowards(_rb.position, targetPosition, _arrivalSpeed * Time.fixedDeltaTime));
+                Vector3 toTarget = playerPosition - _rb.position;
+                if (toTarget.sqrMagnitude > 0.001f)
+                {
+                    _rb.MoveRotation(Quaternion.LookRotation(toTarget));
+                }
+                _arrived = (targetPosition - _rb.position).sqrMagnitude < 4f;
+                return;
+            }
             _rb.MovePosition(Vector3.MoveTowards(
                 _rb.position,
                 targetPosition,

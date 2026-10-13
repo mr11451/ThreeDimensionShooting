@@ -15,7 +15,8 @@ namespace ThreeDimensionShooter
         [SerializeField] private GameObject _chaserPrefab;
         [SerializeField] private GameObject _bossPrefab;
         [SerializeField] private GameObject _missileSupplyPodPrefab;
-        [SerializeField] private float _spawnRadius = 80f;
+        [SerializeField] private float _spawnDistance = 400f;
+        [SerializeField] private float _spawnConeDeg = 30f;
         [SerializeField] private float _supplyPodSpawnRadius = 30f;
         [SerializeField] private int _baseEnemyCount = 3;
         [SerializeField] private int _enemyCountPerWave = 1;
@@ -78,12 +79,15 @@ namespace ThreeDimensionShooter
 
             SpawnMissileSupplyPod();
 
+            var pattern = (SpawnPattern)Random.Range(0, System.Enum.GetValues(typeof(SpawnPattern)).Length);
+            Debug.Log($"[WaveManager] Wave {wave} spawn pattern: {pattern}");
+
             if (wave > 0 && wave % BossWaveInterval == 0)
             {
                 if (_bossPrefab == null) return;
 
-                Vector3 bossDirection = Random.onUnitSphere;
-                Vector3 bossPosition = _player.position + bossDirection * _spawnRadius;
+                Vector3 bossDirection = GetSpawnDirection(pattern);
+                Vector3 bossPosition = _player.position + bossDirection * _spawnDistance;
                 var boss = Instantiate(_bossPrefab, bossPosition, Quaternion.LookRotation(-bossDirection));
                 if (boss.TryGetComponent<EnemyBase>(out var bossEnemy))
                 {
@@ -98,8 +102,8 @@ namespace ThreeDimensionShooter
             int count = _baseEnemyCount + wave * _enemyCountPerWave;
             for (int i = 0; i < count; i++)
             {
-                Vector3 dir = Random.onUnitSphere;
-                Vector3 pos = _player.position + dir * _spawnRadius;
+                Vector3 dir = GetSpawnDirection(pattern);
+                Vector3 pos = _player.position + dir * _spawnDistance;
                 var go = Instantiate(_chaserPrefab, pos, Quaternion.LookRotation(-dir));
                 if (go.TryGetComponent<EnemyBase>(out var enemy))
                 {
@@ -107,6 +111,43 @@ namespace ThreeDimensionShooter
                 }
             }
             _waveActive = true;
+        }
+
+        private enum SpawnPattern
+        {
+            Surround,
+            Front,
+            Back,
+            Sides,
+            UpDown,
+        }
+
+        /// <summary>パターンに応じた出現方向(自機基準)を返す。集中パターンは軸の周囲の円錐内に散らす。</summary>
+        private Vector3 GetSpawnDirection(SpawnPattern pattern)
+        {
+            Vector3 axis;
+            switch (pattern)
+            {
+                case SpawnPattern.Front:
+                    axis = _player.forward;
+                    break;
+                case SpawnPattern.Back:
+                    axis = -_player.forward;
+                    break;
+                case SpawnPattern.Sides:
+                    // 敵ごとに左右どちらかへ振り分ける
+                    axis = (Random.value < 0.5f ? -1f : 1f) * _player.right;
+                    break;
+                case SpawnPattern.UpDown:
+                    axis = (Random.value < 0.5f ? -1f : 1f) * _player.up;
+                    break;
+                default:
+                    return Random.onUnitSphere;
+            }
+
+            return Quaternion.FromToRotation(Vector3.forward, axis)
+                * (Quaternion.Euler(Random.Range(-_spawnConeDeg, _spawnConeDeg), Random.Range(-_spawnConeDeg, _spawnConeDeg), 0f)
+                * Vector3.forward);
         }
 
         private void SpawnMissileSupplyPod()
