@@ -29,6 +29,17 @@ namespace ThreeDimensionShooter
 
         protected override float ExplosionScale => 4f;
 
+        protected override void Die()
+        {
+            foreach (var missile in BossHomingMissile.Active.ToArray())
+            {
+                if (missile != null) Destroy(missile.gameObject);
+            }
+
+            ClearBanner.Show();
+            base.Die();
+        }
+
         private void Awake()
         {
             _rb = GetComponent<Rigidbody>();

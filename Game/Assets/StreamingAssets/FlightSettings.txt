@@ -54,7 +54,7 @@ LockOnMissileDamage = 30
 
 # --- ボス誘導弾 ---------------------------------------------
 # ボスが誘導弾を発射する間隔(秒)。0.1 秒未満は 0.1 秒として扱う。
-BossHomingMissileInterval = 10
+BossHomingMissileInterval = 30
 
 # 一斉発射する誘導弾の数。0 を指定すると発射しない。
 BossHomingMissilesPerLaunch = 2
