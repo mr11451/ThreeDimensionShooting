@@ -5,18 +5,29 @@ namespace ThreeDimensionShooter
 {
     /// <summary>
     /// ウェーブ制の敵スポーン管理。全滅で次ウェーブへ進む。
-    /// 数ウェーブごとに大型ボスを出す(未実装)。
+    /// 5ウェーブごとに大型ボスを出す。
     /// </summary>
     public class WaveManager : MonoBehaviour
     {
+        private const int BossWaveInterval = 5;
+
         [Header("Spawn")]
         [SerializeField] private GameObject _chaserPrefab;
+        [SerializeField] private GameObject _bossPrefab;
+        [SerializeField] private GameObject _missileSupplyPodPrefab;
         [SerializeField] private float _spawnRadius = 80f;
+        [SerializeField] private float _supplyPodSpawnRadius = 30f;
         [SerializeField] private int _baseEnemyCount = 3;
         [SerializeField] private int _enemyCountPerWave = 1;
         [SerializeField] private Transform _player;
 
+        [Header("Wave Interval")]
+        [SerializeField] private float _waveInterval = 3f;
+        [SerializeField] private float _bossClearInterval = 8f;
+
+        private float _nextWaveTime;
         private readonly List<EnemyBase> _alive = new List<EnemyBase>();
+        private GameObject _missileSupplyPod;
         private bool _waveActive;
 
         private void Start()
@@ -46,18 +57,43 @@ namespace ThreeDimensionShooter
 
             if (!_waveActive)
             {
-                SpawnWave(GameManager.Instance.CurrentWave);
+                if (Time.time >= _nextWaveTime)
+                {
+                    SpawnWave(GameManager.Instance.CurrentWave);
+                }
             }
             else if (_alive.Count == 0)
             {
                 _waveActive = false;
+                int clearedWave = GameManager.Instance.CurrentWave;
+                bool wasBossWave = clearedWave > 0 && clearedWave % BossWaveInterval == 0;
+                _nextWaveTime = Time.time + (wasBossWave ? _bossClearInterval : _waveInterval);
                 GameManager.Instance.AdvanceToNextWave();
             }
         }
 
         private void SpawnWave(int wave)
         {
-            if (_chaserPrefab == null || _player == null) return;
+            if (_player == null) return;
+
+            SpawnMissileSupplyPod();
+
+            if (wave > 0 && wave % BossWaveInterval == 0)
+            {
+                if (_bossPrefab == null) return;
+
+                Vector3 bossDirection = Random.onUnitSphere;
+                Vector3 bossPosition = _player.position + bossDirection * _spawnRadius;
+                var boss = Instantiate(_bossPrefab, bossPosition, Quaternion.LookRotation(-bossDirection));
+                if (boss.TryGetComponent<EnemyBase>(out var bossEnemy))
+                {
+                    _alive.Add(bossEnemy);
+                }
+                _waveActive = true;
+                return;
+            }
+
+            if (_chaserPrefab == null) return;
 
             int count = _baseEnemyCount + wave * _enemyCountPerWave;
             for (int i = 0; i < count; i++)
@@ -71,6 +107,18 @@ namespace ThreeDimensionShooter
                 }
             }
             _waveActive = true;
+        }
+
+        private void SpawnMissileSupplyPod()
+        {
+            if (_missileSupplyPodPrefab == null || _missileSupplyPod != null) return;
+
+            Vector3 direction = Random.onUnitSphere;
+            Vector3 position = _player.position + direction * _supplyPodSpawnRadius;
+            _missileSupplyPod = Instantiate(
+                _missileSupplyPodPrefab,
+                position,
+                Quaternion.identity);
         }
     }
 }

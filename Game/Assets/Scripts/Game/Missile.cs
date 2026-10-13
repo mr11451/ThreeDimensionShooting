@@ -20,6 +20,7 @@ namespace ThreeDimensionShooter
         {
             _rb = GetComponent<Rigidbody>();
             _rb.useGravity = false;
+            _damage = FlightSettingsFile.GetInt("LockOnMissileDamage", _damage, 0);
         }
 
         private void Start()
@@ -45,7 +46,15 @@ namespace ThreeDimensionShooter
 
         private void OnTriggerEnter(Collider other)
         {
-            if (other.TryGetComponent<EnemyBase>(out var enemy))
+            if (other.TryGetComponent<BossHomingMissile>(out var homingMissile))
+            {
+                homingMissile.TakeDamage(_damage);
+                Destroy(gameObject);
+                return;
+            }
+
+            var enemy = other.GetComponentInParent<EnemyBase>();
+            if (enemy != null)
             {
                 enemy.TakeDamage(_damage);
                 Destroy(gameObject);

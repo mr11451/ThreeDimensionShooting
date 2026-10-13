@@ -42,12 +42,30 @@ namespace ThreeDimensionShooter
                 }
             }
 
+            var bossHomingMissiles = Object.FindObjectsByType<BossHomingMissile>(FindObjectsSortMode.None);
+            for (int i = 0; i < bossHomingMissiles.Length; i++)
+            {
+                if (bossHomingMissiles[i] != null)
+                {
+                    bossHomingMissiles[i].transform.position += delta;
+                }
+            }
+
             var missiles = Object.FindObjectsByType<Missile>(FindObjectsSortMode.None);
             for (int i = 0; i < missiles.Length; i++)
             {
                 if (missiles[i] != null)
                 {
                     missiles[i].transform.position += delta;
+                }
+            }
+
+            var supplyPods = Object.FindObjectsByType<MissileSupplyPod>(FindObjectsSortMode.None);
+            for (int i = 0; i < supplyPods.Length; i++)
+            {
+                if (supplyPods[i] != null)
+                {
+                    supplyPods[i].transform.position += delta;
                 }
             }
 

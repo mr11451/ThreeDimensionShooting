@@ -17,6 +17,17 @@ namespace ThreeDimensionShooter
 
         public static string FilePath => Path.Combine(Application.streamingAssetsPath, FileName);
 
+        private static Dictionary<string, float> _cache;
+
+        /// <summary>弾など頻繁に生成されるオブジェクト向け。初回のみファイルを読み込む。</summary>
+        public static int GetInt(string key, int defaultValue, int minValue)
+        {
+            _cache ??= Load();
+            return _cache.TryGetValue(key, out float value)
+                ? Mathf.Max(minValue, Mathf.RoundToInt(value))
+                : defaultValue;
+        }
+
         public static Dictionary<string, float> Load()
         {
             var values = new Dictionary<string, float>();

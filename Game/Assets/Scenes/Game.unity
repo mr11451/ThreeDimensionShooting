@@ -1544,7 +1544,10 @@ MonoBehaviour:
   _lateralThrust: 40
   _forwardThrust: 60
   _maxSpeed: 60
-  _lookSensitivity: 2.5
+  _triggerDeadZone: 0.05
+  _maxTurnRateDeg: 150
+  _lookDeadZone: 0.1
+  _lookResponseCurve: 1.5
   _rollLerp: 6
   _bankOnStrafeDeg: 25
   _coastDeceleration: 8
@@ -1820,7 +1823,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _chaserPrefab: {fileID: 7397963531826407275, guid: 8bdbc96bac2a0074980a0ac6f93cdc88, type: 3}
+  _bossPrefab: {fileID: 4235161603887190838, guid: 4f58a008e8f0ff74782aa278c43d6d89, type: 3}
+  _missileSupplyPodPrefab: {fileID: 2312480028754225939, guid: 4c563c208f2f66d4ab4e9e004be9eeb6, type: 3}
   _spawnRadius: 80
+  _supplyPodSpawnRadius: 30
   _baseEnemyCount: 3
   _enemyCountPerWave: 1
   _player: {fileID: 0}

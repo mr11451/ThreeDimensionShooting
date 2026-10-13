@@ -120,13 +120,27 @@ namespace ThreeDimensionShooter
 
             foreach (var h in hits)
             {
-                if (!h.TryGetComponent<EnemyBase>(out var enemy) || !enemy.IsAlive) continue;
+                Transform target;
+                if (h.TryGetComponent<EnemyBase>(out var enemy))
+                {
+                    if (!enemy.IsAlive) continue;
+                    target = enemy.transform;
+                }
+                else if (h.TryGetComponent<BossHomingMissile>(out var homingMissile))
+                {
+                    if (!homingMissile.IsAlive) continue;
+                    target = homingMissile.transform;
+                }
+                else
+                {
+                    continue;
+                }
 
-                Vector3 to = h.transform.position - origin;
+                Vector3 to = target.position - origin;
                 float angle = Vector3.Angle(forward, to);
                 if (angle <= lockOnAngleDeg)
                 {
-                    candidates.Add((h.transform, to.magnitude));
+                    candidates.Add((target, to.magnitude));
                 }
             }
 
@@ -194,6 +208,15 @@ namespace ThreeDimensionShooter
         public void RestockMissiles()
         {
             _missileStock = _missileMaxStock;
+        }
+
+        public bool AddMissileStock(int amount)
+        {
+            if (amount <= 0 || _missileStock >= _missileMaxStock) return false;
+
+            int previousStock = _missileStock;
+            _missileStock = Mathf.Min(_missileStock + amount, _missileMaxStock);
+            return _missileStock > previousStock;
         }
     }
 }

@@ -11,6 +11,11 @@ namespace ThreeDimensionShooter
         [SerializeField] private int _damage = 5;
         [SerializeField] private float _lifeSeconds = 3f;
 
+        private void Awake()
+        {
+            _damage = FlightSettingsFile.GetInt("PlayerShotDamage", _damage, 0);
+        }
+
         private void Start()
         {
             Destroy(gameObject, _lifeSeconds);
@@ -18,6 +23,13 @@ namespace ThreeDimensionShooter
 
         private void OnTriggerEnter(Collider other)
         {
+            if (other.TryGetComponent<BossHomingMissile>(out var homingMissile))
+            {
+                homingMissile.TakeDamage(_damage);
+                Destroy(gameObject);
+                return;
+            }
+
             if (other.TryGetComponent<EnemyBase>(out var enemy))
             {
                 enemy.TakeDamage(_damage);

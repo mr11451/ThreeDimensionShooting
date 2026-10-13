@@ -5,8 +5,8 @@ using UnityEngine;
 namespace ThreeDimensionShooter.EditorTools
 {
     /// <summary>
-    /// 敵・弾・ミサイルのプレハブとワイヤーフレームマテリアルを生成し、
-    /// Game シーンの WaveManager に敵プレハブを設定する。
+    /// 敵・ボス・弾・ミサイル・補給ポッドのプレハブとマテリアルを生成し、
+    /// Game シーンの WaveManager にプレハブを設定する。
     /// メニュー: Tools > ThreeDimension > Setup Prefabs
     /// </summary>
     public static class PrefabSetup
@@ -56,13 +56,19 @@ namespace ThreeDimensionShooter.EditorTools
             var wireCyan = CreateWireMaterial("Wireframe_Cyan", new Color(0.2f, 0.9f, 1f));
 
             var enemyPrefab = CreateEnemyPrefab(wireRed);
+            var bossPrefab = CreateBossPrefab(wireRed);
             var bulletPrefab = CreateBulletPrefab(wireGreen);
             var missilePrefab = CreateMissilePrefab(wireCyan);
+            var bossMissilePrefab = CreateBossHomingMissilePrefab(wireCyan);
+            var missileSupplyPodPrefab = CreateMissileSupplyPodPrefab(wireCyan);
             var enemyBulletPrefab = CreateEnemyBulletPrefab(wireRed);
 
-            AssignEnemyToWaveManager(enemyPrefab);
+            AssignEnemyToWaveManager(enemyPrefab, bossPrefab);
+            AssignMissileSupplyPodToWaveManager(missileSupplyPodPrefab);
             AssignPlayerWeapons(bulletPrefab, missilePrefab);
             AssignEnemyBullet(enemyPrefab, enemyBulletPrefab);
+            AssignBossBullet(bossPrefab, enemyBulletPrefab);
+            AssignBossHomingMissile(bossPrefab, bossMissilePrefab);
 
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
@@ -125,6 +131,38 @@ namespace ThreeDimensionShooter.EditorTools
             return prefab;
         }
 
+        private static GameObject CreateBossPrefab(Material mat)
+        {
+            string path = $"{PrefabDir}/BossEnemy.prefab";
+            var existing = AssetDatabase.LoadAssetAtPath<GameObject>(path);
+            if (existing != null) return existing;
+
+            var go = new GameObject("BossEnemy");
+            var mesh = CreateLowPolySphereMesh();
+            var meshFilter = go.AddComponent<MeshFilter>();
+            meshFilter.sharedMesh = mesh;
+            go.transform.localScale = new Vector3(8f, 8f, 10f);
+
+            var renderer = go.AddComponent<MeshRenderer>();
+            renderer.sharedMaterial = mat;
+
+            CreateBossArmor(go.transform, "LeftArmor", new Vector3(-0.8f, 0f, -0.25f), mesh, mat);
+            CreateBossArmor(go.transform, "RightArmor", new Vector3(0.8f, 0f, -0.25f), mesh, mat);
+
+            var collider = go.AddComponent<SphereCollider>();
+            collider.isTrigger = true;
+
+            var rb = go.AddComponent<Rigidbody>();
+            rb.useGravity = false;
+            rb.isKinematic = true;
+
+            go.AddComponent<BossEnemy>();
+
+            var prefab = PrefabUtility.SaveAsPrefabAsset(go, path);
+            Object.DestroyImmediate(go);
+            return prefab;
+        }
+
         private static GameObject CreateBulletPrefab(Material mat)
         {
             string path = $"{PrefabDir}/Bullet.prefab";
@@ -177,6 +215,56 @@ namespace ThreeDimensionShooter.EditorTools
             return prefab;
         }
 
+        private static GameObject CreateBossHomingMissilePrefab(Material mat)
+        {
+            string path = $"{PrefabDir}/BossHomingMissile.prefab";
+            var existing = AssetDatabase.LoadAssetAtPath<GameObject>(path);
+            if (existing != null) return existing;
+
+            var go = new GameObject("BossHomingMissile");
+            go.transform.localScale = new Vector3(0.8f, 0.8f, 2f);
+            go.AddComponent<MeshFilter>().sharedMesh = CreateLowPolySphereMesh();
+            go.AddComponent<MeshRenderer>().sharedMaterial = mat;
+
+            var collider = go.AddComponent<SphereCollider>();
+            collider.isTrigger = true;
+
+            var rb = go.AddComponent<Rigidbody>();
+            rb.useGravity = false;
+
+            go.AddComponent<BossHomingMissile>();
+
+            var prefab = PrefabUtility.SaveAsPrefabAsset(go, path);
+            Object.DestroyImmediate(go);
+            return prefab;
+        }
+
+        private static GameObject CreateMissileSupplyPodPrefab(Material mat)
+        {
+            string path = $"{PrefabDir}/MissileSupplyPod.prefab";
+            var existing = AssetDatabase.LoadAssetAtPath<GameObject>(path);
+            if (existing != null) return existing;
+
+            var go = new GameObject("MissileSupplyPod");
+            go.transform.localScale = Vector3.one * 2.5f;
+            go.AddComponent<MeshFilter>().sharedMesh = CreateLowPolySphereMesh();
+            go.AddComponent<MeshRenderer>().sharedMaterial = mat;
+
+            var collider = go.AddComponent<SphereCollider>();
+            collider.isTrigger = true;
+            collider.radius = 0.8f;
+
+            var rb = go.AddComponent<Rigidbody>();
+            rb.useGravity = false;
+            rb.isKinematic = true;
+
+            go.AddComponent<MissileSupplyPod>();
+
+            var prefab = PrefabUtility.SaveAsPrefabAsset(go, path);
+            Object.DestroyImmediate(go);
+            return prefab;
+        }
+
         private static GameObject CreateEnemyBulletPrefab(Material mat)
         {
             string path = $"{PrefabDir}/EnemyBullet.prefab";
@@ -202,6 +290,16 @@ namespace ThreeDimensionShooter.EditorTools
             var prefab = PrefabUtility.SaveAsPrefabAsset(go, path);
             Object.DestroyImmediate(go);
             return prefab;
+        }
+
+        private static void CreateBossArmor(Transform parent, string name, Vector3 position, Mesh mesh, Material mat)
+        {
+            var armor = new GameObject(name);
+            armor.transform.SetParent(parent, false);
+            armor.transform.localPosition = position;
+            armor.transform.localScale = new Vector3(0.45f, 0.55f, 0.7f);
+            armor.AddComponent<MeshFilter>().sharedMesh = mesh;
+            armor.AddComponent<MeshRenderer>().sharedMaterial = mat;
         }
 
         private static Mesh CreateLowPolySphereMesh()
@@ -268,7 +366,7 @@ namespace ThreeDimensionShooter.EditorTools
             return mesh;
         }
 
-        private static void AssignEnemyToWaveManager(GameObject enemyPrefab)
+        private static void AssignEnemyToWaveManager(GameObject enemyPrefab, GameObject bossPrefab)
         {
             var scene = EditorSceneManager.OpenScene("Assets/Scenes/Game.unity", OpenSceneMode.Single);
             var wm = Object.FindFirstObjectByType<WaveManager>();
@@ -276,10 +374,28 @@ namespace ThreeDimensionShooter.EditorTools
             {
                 var so = new SerializedObject(wm);
                 so.FindProperty("_chaserPrefab").objectReferenceValue = enemyPrefab;
+                so.FindProperty("_bossPrefab").objectReferenceValue = bossPrefab;
                 so.ApplyModifiedPropertiesWithoutUndo();
                 EditorSceneManager.MarkSceneDirty(scene);
                 EditorSceneManager.SaveScene(scene);
             }
+        }
+
+        private static void AssignMissileSupplyPodToWaveManager(GameObject missileSupplyPodPrefab)
+        {
+            var scene = EditorSceneManager.OpenScene("Assets/Scenes/Game.unity", OpenSceneMode.Single);
+            var waveManager = Object.FindFirstObjectByType<WaveManager>();
+            if (waveManager == null)
+            {
+                Debug.LogError("[PrefabSetup] WaveManager not found in Game scene.");
+                return;
+            }
+
+            var serializedWaveManager = new SerializedObject(waveManager);
+            serializedWaveManager.FindProperty("_missileSupplyPodPrefab").objectReferenceValue = missileSupplyPodPrefab;
+            serializedWaveManager.ApplyModifiedPropertiesWithoutUndo();
+            EditorSceneManager.MarkSceneDirty(scene);
+            EditorSceneManager.SaveScene(scene);
         }
 
         private static void AssignEnemyBullet(GameObject enemyPrefab, GameObject enemyBulletPrefab)
@@ -292,6 +408,40 @@ namespace ThreeDimensionShooter.EditorTools
             {
                 var so = new SerializedObject(chaser);
                 so.FindProperty("_bulletPrefab").objectReferenceValue = enemyBulletPrefab;
+                so.ApplyModifiedPropertiesWithoutUndo();
+                PrefabUtility.SaveAsPrefabAsset(root, path);
+            }
+            PrefabUtility.UnloadPrefabContents(root);
+        }
+
+        private static void AssignBossBullet(GameObject bossPrefab, GameObject enemyBulletPrefab)
+        {
+            string path = AssetDatabase.GetAssetPath(bossPrefab);
+            var root = PrefabUtility.LoadPrefabContents(path);
+            var boss = root.GetComponent<BossEnemy>();
+            if (boss != null)
+            {
+                var so = new SerializedObject(boss);
+                so.FindProperty("_bulletPrefab").objectReferenceValue = enemyBulletPrefab;
+                so.FindProperty("_hp").intValue = 300;
+                so.FindProperty("_scoreValue").intValue = 2500;
+                so.ApplyModifiedPropertiesWithoutUndo();
+                PrefabUtility.SaveAsPrefabAsset(root, path);
+            }
+            PrefabUtility.UnloadPrefabContents(root);
+        }
+
+        private static void AssignBossHomingMissile(GameObject bossPrefab, GameObject bossMissilePrefab)
+        {
+            string path = AssetDatabase.GetAssetPath(bossPrefab);
+            var root = PrefabUtility.LoadPrefabContents(path);
+            var boss = root.GetComponent<BossEnemy>();
+            if (boss != null)
+            {
+                var so = new SerializedObject(boss);
+                so.FindProperty("_homingMissilePrefab").objectReferenceValue = bossMissilePrefab;
+                so.FindProperty("_homingMissileInterval").floatValue = 60f;
+                so.FindProperty("_homingMissilesPerLaunch").intValue = 2;
                 so.ApplyModifiedPropertiesWithoutUndo();
                 PrefabUtility.SaveAsPrefabAsset(root, path);
             }

@@ -20,7 +20,7 @@ ThreeDimension/
 │  │  ├─ Scripts/
 │  │  │  ├─ Game/           # GameManager(進行・スコア・ウェーブ)
 │  │  │  ├─ Player/         # 自機(移動/武装/シールド)
-│  │  │  ├─ Enemy/          # 敵(基底/追跡型 など)
+│  │  │  ├─ Enemy/          # 敵(追跡型/大型ボス など)
 │  │  │  └─ UI/             # HUD
 │  │  ├─ Shaders/           # ワイヤーフレームシェーダー
 │  │  ├─ Materials/
@@ -45,9 +45,11 @@ ThreeDimension/
 | LB 解除 | ロックオンミサイル発射 |
 | Start | ポーズ(検討中) |
 
+5ウェーブごとに大型ボスが単独で出現し、撃破すると次のウェーブへ進む。
+
 ### 調整用設定ファイル
 
-慣性・加速・旋回などは `Game/Assets/StreamingAssets/FlightSettings.txt` (`キー = 値`、`#` でコメント)で調整できる。ビルド版でも `ThreeDimensionShooter_Data/StreamingAssets/` 内を編集すれば再ビルド不要。ファイルの値はシーン保存値より優先される。
+慣性・加速・旋回・ボス誘導弾などは `Game/Assets/StreamingAssets/FlightSettings.txt` (`キー = 値`、`#` でコメント)で調整できる。ビルド版でも `ThreeDimensionShooter_Data/StreamingAssets/` 内を編集すれば再ビルド不要。ファイルの値はシーン保存値より優先される。
 
 | キー | 内容 |
 | --- | --- |
@@ -58,6 +60,11 @@ ThreeDimension/
 | MaxTurnRate | 右スティック最大時の旋回速度(度/秒) |
 | LookDeadZone / LookResponseCurve | 右スティックの遊び / 応答カーブ指数 |
 | RollLerp / BankOnStrafeDeg | バンク追従速度 / 横移動時の最大バンク角 |
+| BossHp | ボスの耐久度 |
+| PlayerShotDamage | メインショット1発のダメージ |
+| LockOnMissileDamage | ロックオンミサイル1発のダメージ |
+| BossHomingMissileInterval | ボス誘導弾の発射間隔(秒) |
+| BossHomingMissilesPerLaunch | ボス誘導弾の一回あたりの発射数 |
 
 ## セットアップ
 
@@ -65,35 +72,25 @@ ThreeDimension/
 2. Unity Hub で `Game` フォルダを開く
 3. 初回起動時に Input System が有効化され、再起動を求められる場合あり
 
-## 現状(プロトタイプ)
+## ビルド方法 (Windows)
 
-- [x] プロジェクト新規作成(Built-in RP)
-- [x] フォルダ構成 + .gitignore
-- [x] 自機コントローラー(PlayerShipController)
-- [x] 武装の骨組み(PlayerWeapons)
-- [x] シールド自動回復(PlayerShield)
-- [x] 撃墜演出(赤い半透明オーバーレイと窓のひび割れ、3秒間)
-- [x] 残機制(初期3機、再出撃、再出撃後2秒間の無敵時間)
-- [x] 接触ダメージ(敵機100、星100)
-- [x] 軽量化(星40個、敵・星は低ポリ球メッシュ 3x4 分割)
-- [x] 慣性付き移動(トリガー・右スティックはアナログ入力)
-- [x] 自機原点固定 + 世界の相対移動
-- [x] ハイスコア保存(PlayerPrefs)
-- [x] 星空を一定数維持(40個の星を再配置)
-- [x] 敵基底 + 追跡型(EnemyBase / ChaserEnemy)
-- [x] ゲーム進行(GameManager: スコア・コンボ・ウェーブ)
-- [x] ワイヤーフレームシェーダー(WireframeUnlit)
-- [x] シーン作成(Title / Game / GameOver)+ EditorBuildSettings 登録
-- [x] WaveManager(敵スポーン制御の骨組み)
-- [x] タイトル / ゲームオーバー画面の基本コントローラー
-- [x] 敵弾・ミサイル実体・ロックオン処理(Bullet / Missile / PlayerWeapons)
-- [x] 敵プレハブ(ワイヤーフレーム見た目)作成(ChaserEnemy)
-- [x] HUD(シールド/残機/スコア/コンボ/ミサイル/ウェーブ表示)
-- [x] 敵の射撃(EnemyBullet / ChaserEnemy の Fire 実装)
-- [x] ゲームオーバー → GameOver シーン遷移
-- [x] 効果音(プロシージャル生成: ショット/ミサイル/爆発/被弾/ロックオン)
-- [x] BGM(プロシージャル生成: シンセ系ループ)
-- [x] ハイスコア保存
+### Unity Editor からビルド
+
+1. Unity Hub で `Game` フォルダを開く
+2. メニューから **Tools > ThreeDimension > Build Windows** を選択
+3. ビルド完了後、`Game/Builds/Windows/ThreeDimensionShooter.exe` を実行
+
+ビルドには `Game/ProjectSettings/EditorBuildSettings.asset` で有効になっている Title / Game / GameOver シーンが使われる。ビルドしてすぐ起動する場合は **Tools > ThreeDimension > Build And Run Windows** を選ぶ。
+
+### コマンドラインからビルド
+
+Unity Editor の実行ファイルとリポジトリのパスを環境に合わせて指定し、コマンドプロンプトまたは PowerShell で実行する。
+
+```powershell
+& "<Unity Editorの実行ファイルのフルパス>" -batchmode -quit -projectPath "<リポジトリのパス>\Game" -executeMethod ThreeDimensionShooter.EditorTools.BuildPlayer.BuildWindows
+```
+
+例: Unity Hub の標準インストール先を使う場合は、Unity Editor の実行ファイルを `C:\Program Files\Unity\Hub\Editor\6000.0.84f1\Editor\Unity.exe` に置き換える。ビルド成果物は `Game/Builds/Windows/` に出力される。
 
 ## 仕様
 
