@@ -77,6 +77,32 @@ namespace ThreeDimensionShooter
             return CreateClip(name, data);
         }
 
+        /// <summary>ボス撃破: 低音の連続爆発「ドドド…」+ 余韻</summary>
+        public static AudioClip BossDestroyed()
+        {
+            float duration = 2.2f;
+            int samples = (int)(SampleRate * duration);
+            var data = new float[samples];
+            var rng = new System.Random();
+            float low = 0f, phase = 0f;
+            for (int i = 0; i < samples; i++)
+            {
+                float time = (float)i / SampleRate;
+                float t = (float)i / samples;
+                // 0.17 秒周期の打撃(周期は徐々に長くなる)
+                float period = Mathf.Lerp(0.14f, 0.3f, t);
+                float local = time % period;
+                float hit = Mathf.Exp(-local * 18f);
+                float freq = Mathf.Lerp(55f, 32f, t);
+                phase += 2f * Mathf.PI * freq / SampleRate;
+                float noise = (float)(rng.NextDouble() * 2.0 - 1.0);
+                low = Mathf.Lerp(low, noise, 0.05f);
+                float tail = Mathf.Pow(1f - t, 1.5f);
+                data[i] = (Mathf.Sin(phase) * 0.8f + low * 2.5f) * hit * tail * 1.3f;
+            }
+            return CreateClip("BossDestroyed", data);
+        }
+
         /// <summary>爆発: 減衰するノイズ</summary>
         public static AudioClip Explosion()
         {

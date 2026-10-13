@@ -32,6 +32,8 @@ namespace ThreeDimensionShooter
         [SerializeField] private float _arrivalSpeed = 150f;
         protected override float ExplosionScale => 4f;
 
+        protected override void PlayDestroySound() => AudioManager.Instance?.PlayBossDestroyed();
+
         protected override void Die()
         {
             foreach (var missile in BossHomingMissile.Active.ToArray())

@@ -27,10 +27,12 @@ namespace ThreeDimensionShooter
         protected virtual void Die()
         {
             GameManager.Instance?.AddScore(_scoreValue);
-            AudioManager.Instance?.PlayExplosion();
+            PlayDestroySound();
             SpawnExplosionEffect();
             Destroy(gameObject);
         }
+
+        protected virtual void PlayDestroySound() => AudioManager.Instance?.PlayExplosion();
 
         protected virtual float ExplosionScale => 1f;
 

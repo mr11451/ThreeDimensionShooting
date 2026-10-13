@@ -26,6 +26,7 @@ namespace ThreeDimensionShooter
         private AudioClip _bgmClip;
         private AudioClip _bossShotHitClip;
         private AudioClip _bossMissileHitClip;
+        private AudioClip _bossDestroyedClip;
 
         private void Awake()
         {
@@ -59,9 +60,11 @@ namespace ThreeDimensionShooter
             _bgmClip = ProceduralAudio.BgmLoop();
             _bossShotHitClip = ProceduralAudio.BossShotHit();
             _bossMissileHitClip = ProceduralAudio.BossMissileHit();
+            _bossDestroyedClip = ProceduralAudio.BossDestroyed();
         }
 
         public void PlayBossShotHit() => PlaySE(_bossShotHitClip);
+        public void PlayBossDestroyed() => PlaySE(_bossDestroyedClip);
         public void PlayBossMissileHit() => PlaySE(_bossMissileHitClip);
 
         public void PlayShot() => PlaySE(_shotClip);
